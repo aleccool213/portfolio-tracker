@@ -87,41 +87,159 @@ have and why, not to reconcile statements.
 
 ## Milestones
 
-Each milestone is a self-contained, **deployable** PR. Run `bin/rails test`
-before opening each PR; the Render preview must boot with seed data.
+Milestones are **deliberately small** — each is a single, self-contained,
+**deployable** PR that a focused agent (e.g. Sonnet) can complete accurately in
+one sitting. Each one lists exactly what to build, which files it touches, and
+what to test.
 
-### ✅ Milestone 1 — Deployable scaffold + seed (this PR)
-- Rails 8 app, SQLite, Hotwire via import maps (no JS build).
-- `Account` model (`name`, `institution`, `kind`) with validations.
-- Warm hey.com-style dashboard listing seeded accounts, each with an emoji,
-  institution, and kind tag; a monthly check-in reminder banner.
-- Idempotent seed with a realistic Canadian Wealthsimple-shaped dataset.
-- `render.yaml` (Render test deploy) + stock `Dockerfile` (Pi/Kamal).
-- Model + controller tests green.
+**Rules for every milestone:**
+- Keep it to the files listed. Don't refactor unrelated code.
+- Add/extend tests as described; `bin/rails test` must be green.
+- Keep `bin/rubocop`, `bin/brakeman`, `bin/bundler-audit`, and
+  `bin/importmap audit` clean (this repo's CI runs all four).
+- No JavaScript build step — Hotwire (Turbo/Stimulus) over import maps only.
+- The Render preview must still boot with seed data. If a milestone adds a
+  model, extend `db/seeds.rb` so the dashboard has something to show.
+- Match the existing warm hey.com style (reuse the CSS variables and card
+  patterns already in `app/assets/stylesheets/application.css`).
 
-### Milestone 2 — Account values & the "+5% vs last month" dashboard
-- `AccountValue` model (monthly snapshots) + association.
-- Dedicated **value-entry page** (Turbo-driven) to record this month's numbers.
-- Dashboard shows **current value per product** and **% change vs last month**,
-  plus a **net-worth** total (assets − liabilities).
-- Monthly reminder becomes real (highlights when the current month has no
-  values yet).
-- Seed extended with several months of snapshots so trends are visible.
+---
 
-### Milestone 3 — Liabilities (mortgage) & credit-card perks
-- Liability details for mortgages: interest rate, term, principal.
-- Credit-card records: perks/fees/benefits only, **no balances**.
-- Net worth correctly subtracts liabilities.
-- Simple "manage accounts" CRUD (add/edit/delete) via Turbo.
+### ✅ Milestone 1 — Deployable scaffold + seed (done)
+- Rails 8 app, SQLite, Hotwire via import maps; `Account` model; warm dashboard
+  listing seeded accounts; `render.yaml` + `Dockerfile`; tests green.
 
-### Milestone 4 — Trends, allocation & risk
-- Per-account and total trend views over time (server-rendered charts, no JS build).
-- Asset allocation / concentration view; gentle rebalancing nudges.
-- Canadian-flavoured account-opening suggestions (TFSA/RRSP/FHSA room hints).
+---
 
-### Milestone 5 — MCP server
-- Expose the data (read-only first) via an MCP server so an LLM can answer
-  "should I pay more into my mortgage?"-style questions over real numbers.
+### Milestone 2 — `AccountValue` model (data only)
+**Goal:** a monthly-snapshot model, with no UI beyond showing the latest value.
+- **Migrate:** `AccountValue` — `account:references`, `recorded_on:date`,
+  `amount:decimal` (precision 12, scale 2). Add a unique index on
+  `[account_id, recorded_on]`.
+- **Model `AccountValue`:** `belongs_to :account`; validate presence of
+  `recorded_on` and `amount`; `amount` numericality (can be negative for
+  liabilities). Default scope or scope `chronological` ordered by `recorded_on`.
+- **Model `Account`:** `has_many :account_values, dependent: :destroy`.
+  Add `latest_value` (most recent by `recorded_on`) and
+  `current_amount` (its `amount`, or `nil`).
+- **Dashboard:** show each account's `current_amount` (formatted `$`) on its
+  card; "—" when no value yet. Add a `number_to_currency`-based helper.
+- **Seed:** give every non-liability account ~6 monthly snapshots
+  (e.g. Jan–Jun of the current year), gently growing; the mortgage a shrinking
+  balance. Keep idempotent (`find_or_create_by` on account + `recorded_on`).
+- **Tests:** `AccountValueTest` (validations, association), `AccountTest`
+  additions (`latest_value`, `current_amount`), dashboard shows a dollar amount.
+- **Files:** migration, `app/models/account_value.rb`, `app/models/account.rb`,
+  `app/views/dashboard/index.html.erb`, a helper, `db/seeds.rb`, fixtures + tests.
+
+### Milestone 3 — Value-entry page
+**Goal:** a dedicated page to record this month's value for each account.
+- **Route:** `resource :value_entry, only: [:show, :create]` (or a
+  `MonthlyValuesController`). Link to it from the dashboard reminder banner.
+- **Page:** one row per non-credit-card account, each with a number field
+  pre-filled with the current month's value if it exists. Submitting upserts an
+  `AccountValue` per account for `recorded_on = Date.current.beginning_of_month`.
+- **Turbo:** submit via a normal Turbo form; on success redirect to the
+  dashboard with a friendly flash ("Saved this month's values 🎉").
+- **Tests:** posting values creates/updates `AccountValue` rows for the current
+  month; re-posting updates rather than duplicates.
+- **Files:** route, one controller, one view, a small form partial, tests.
+
+### Milestone 4 — "+5% vs last month" badges
+**Goal:** show month-over-month change per account on the dashboard.
+- **Helper/PORO `MonthlyChange`:** given an account, compare the current
+  month's value to the previous month's; return `{ pct:, direction: }`.
+  Handle missing prior month (return nil → render nothing) and zero prior
+  (avoid divide-by-zero).
+- **Dashboard:** render a small badge next to each value: green `▲ +5%`,
+  red `▼ −3%`, muted when flat. Add `.badge`, `.badge-up`, `.badge-down` CSS.
+- **Tests:** the change calc (positive, negative, missing prior, zero prior);
+  a dashboard test asserting a badge renders for an account with two months.
+- **Files:** a calc class under `app/models/` or `app/services/`, dashboard
+  view, CSS, tests.
+
+### Milestone 5 — Net-worth summary + real monthly reminder
+**Goal:** a headline net-worth number and a reminder that knows if you're behind.
+- **Calc:** total net worth = sum of current amounts, treating `liability`
+  kinds as negative. Put it in a helper or a small `Portfolio` PORO.
+- **Hero:** replace the "accounts tracked" count with formatted net worth and a
+  net month-over-month % change.
+- **Reminder logic:** show the "time for a check-in" banner **only when** the
+  current month has no values for one or more asset accounts; otherwise show a
+  calm "you're all caught up ✅" state.
+- **Tests:** net-worth calc (assets minus liabilities); reminder shows when a
+  current-month value is missing and hides when all present.
+- **Files:** helper/PORO, dashboard view, tests.
+
+### Milestone 6 — Manage accounts (CRUD)
+**Goal:** add, edit, and delete accounts from the UI.
+- **Resource:** `resources :accounts` (`new/create/edit/update/destroy`;
+  `index` can redirect to the dashboard). `kind` is a select of `Account::KINDS`.
+- **UI:** an "Add account" button on the dashboard; edit/delete on each card via
+  Turbo (confirm on delete). Reuse the card style; keep forms simple.
+- **Strong params, validations surfaced** in the form.
+- **Tests:** create, update, destroy happy paths; invalid create re-renders with
+  errors.
+- **Files:** route, `AccountsController`, `new/edit/_form` views, dashboard
+  edit/delete affordances, tests.
+
+### Milestone 7 — Mortgage / liability details
+**Goal:** capture the numbers a mortgage decision needs.
+- **Migrate:** add nullable columns used only by `liability` accounts —
+  `interest_rate:decimal`, `term_months:integer`, `original_principal:decimal`.
+- **Model:** validate these are present/positive **only when**
+  `kind == "liability"`; ignore otherwise. Helper `mortgage?`.
+- **UI:** show rate + term on liability cards; expose the fields in the account
+  form when `kind` is liability (progressive — fine to always show for now).
+- **Seed:** give the mortgage a realistic rate/term/principal.
+- **Tests:** conditional validations; card renders the rate.
+- **Files:** migration, `app/models/account.rb`, account form + dashboard views,
+  seed, tests.
+
+### Milestone 8 — Credit-card perks (no balances)
+**Goal:** a place to remember every card and why you have it.
+- **Migrate:** add nullable columns for `credit_card` accounts —
+  `annual_fee:decimal`, `perks:text`, `renewal_on:date`. **No balance field.**
+- **Model:** these apply only to `kind == "credit_card"`; helper `credit_card?`.
+- **UI:** a "Cards" section/page listing each card with its perks, annual fee,
+  and renewal date. Explicitly **not** part of net worth.
+- **Seed:** flesh out the Aeroplan card and add one or two more.
+- **Tests:** cards render their perks; cards are excluded from net worth.
+- **Files:** migration, model, a cards partial/page, seed, tests.
+
+### Milestone 9 — Per-account trend (server-rendered)
+**Goal:** a small history chart per account, no JS build.
+- **Sparkline:** render an inline `<svg>` from an account's `account_values`
+  (a helper that maps values to points). No charting library, no import.
+- **UI:** show the sparkline on each dashboard card (or an account show page);
+  empty state when fewer than two data points.
+- **Tests:** the point-generation helper (scaling, ordering); an svg renders
+  when there are ≥2 values.
+- **Files:** a helper, a `_sparkline` partial, view wiring, tests.
+
+### Milestone 10 — Allocation & gentle nudges
+**Goal:** answer "am I diversified / too safe?" at a glance.
+- **Calc:** totals by `kind` and each kind's % of assets. Flag concentration
+  (any single account > 50% of assets, or cash > some threshold).
+- **UI:** a simple allocation breakdown (stacked bar or labelled list) plus
+  friendly nudge copy ("You're heavy in cash — consider investing some").
+- **Tests:** allocation math; a nudge appears for a concentrated fixture.
+- **Files:** a calc class, a view section/partial, tests.
+
+### Milestone 11 — Canadian account suggestions
+**Goal:** lightweight, Canadian-specific "what should I open?" hints.
+- **Data:** a small static table of account types (TFSA/RRSP/FHSA/RESP) with
+  one-line "who it's for" copy and 2026 contribution-room notes (hard-coded,
+  clearly dated — not tax advice).
+- **UI:** show suggestions for registered accounts the user doesn't yet have.
+- **Tests:** suggestions exclude kinds the user already holds.
+- **Files:** a constant/PORO, a view partial, tests.
+
+### Milestone 12 — MCP server (read-only)
+**Goal:** let an LLM answer questions over the real numbers.
+- Expose read-only tools (list accounts, get values, net worth, allocation)
+  via an MCP server. Design after the dashboard is complete; spec this milestone
+  in more detail when we reach it.
 
 ---
 
