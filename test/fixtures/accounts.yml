@@ -1,0 +1,16 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+managed_tfsa:
+  name: Managed TFSA
+  institution: Wealthsimple
+  kind: tfsa
+
+rrsp:
+  name: RRSP
+  institution: Wealthsimple
+  kind: rrsp
+
+mortgage:
+  name: Home mortgage
+  institution: RBC
+  kind: liability

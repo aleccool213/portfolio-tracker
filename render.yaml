@@ -1,0 +1,32 @@
+# Render Blueprint — throwaway per-PR test deploys.
+#
+# How it works:
+#   * Render builds the Dockerfile and auto-deploys on every push (great from a phone).
+#   * The SQLite database lives on the container's ephemeral disk, so it is
+#     rebuilt and RE-SEEDED with fresh sample data on every deploy. That's
+#     exactly what we want while developing — a clean, predictable test dataset.
+#   * We bypass Thruster here and bind Puma straight to Render's $PORT.
+#
+# For the real, persistent deploy (your Raspberry Pi), use the Dockerfile with
+# Kamal (config/deploy.yml) instead — that keeps a durable SQLite volume.
+services:
+  - type: web
+    name: portfolio-tracker
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+    autoDeploy: true
+    # Rebuild + reseed the ephemeral DB, then boot Puma on Render's $PORT.
+    dockerCommand: bash -lc "./bin/rails db:prepare && ./bin/rails server -b 0.0.0.0 -p ${PORT:-3000}"
+    envVars:
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+      - key: RAILS_SERVE_STATIC_FILES
+        value: "true"
+      - key: WEB_CONCURRENCY
+        value: "1"

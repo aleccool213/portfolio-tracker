@@ -1,0 +1,44 @@
+<% content_for :title, "Your money, at a glance" %>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>Hey there <span class="wave">👋</span></h1>
+    <p>Here's everything in one place.</p>
+  </header>
+
+  <div class="reminder">
+    <span class="emoji">🗓️</span>
+    <div>
+      <strong>It's a fresh month — time for a check-in.</strong>
+      <span>On the 1st, jot down what each account is worth. Value entry lands in the next update.</span>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="label">Accounts tracked</div>
+    <div class="value"><%= @accounts.size %></div>
+  </section>
+
+  <h2 class="section-title">Your accounts</h2>
+
+  <% if @accounts.any? %>
+    <div class="cards">
+      <% @accounts.each do |account| %>
+        <article class="card">
+          <div class="dot"><%= kind_emoji(account.kind) %></div>
+          <div class="body">
+            <div class="name"><%= account.name %></div>
+            <div class="meta"><%= account.institution %></div>
+          </div>
+          <div class="tag"><%= account.kind_label %></div>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty">
+      <p>No accounts yet. Seed data usually fills this in — add your own soon.</p>
+    </div>
+  <% end %>
+
+  <p class="footnote">Values, % change vs last month, and rebalancing nudges are on the way.</p>
+</div>
