@@ -1,0 +1,18 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# Two months for the managed TFSA — enough to exercise latest_value / ordering.
+managed_tfsa_may:
+  account: managed_tfsa
+  recorded_on: 2026-05-01
+  amount: 42000.00
+
+managed_tfsa_june:
+  account: managed_tfsa
+  recorded_on: 2026-06-01
+  amount: 43500.00
+
+# A liability snapshot, stored as a negative balance owed.
+mortgage_june:
+  account: mortgage
+  recorded_on: 2026-06-01
+  amount: -318000.00

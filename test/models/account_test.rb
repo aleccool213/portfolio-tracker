@@ -26,4 +26,16 @@ class AccountTest < ActiveSupport::TestCase
   test "kind_label humanizes other kinds" do
     assert_equal "Liability", accounts(:mortgage).kind_label
   end
+
+  test "latest_value returns the most recent snapshot" do
+    assert_equal account_values(:managed_tfsa_june), accounts(:managed_tfsa).latest_value
+  end
+
+  test "current_amount returns the latest snapshot's amount" do
+    assert_equal account_values(:managed_tfsa_june).amount, accounts(:managed_tfsa).current_amount
+  end
+
+  test "current_amount is nil when no values are recorded" do
+    assert_nil accounts(:rrsp).current_amount
+  end
 end
