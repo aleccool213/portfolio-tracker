@@ -1,0 +1,21 @@
+<% content_for :title, "This month's check-in" %>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>Monthly check-in <span class="wave">🗓️</span></h1>
+    <p>What's each account worth as of <%= @month.strftime("%B %Y") %>? Leave a row blank to skip it.</p>
+  </header>
+
+  <%= form_with url: value_entry_path, method: :post, class: "value-form" do %>
+    <div class="cards">
+      <% @accounts.each do |account| %>
+        <%= render "row", account: account, current: @current_values[account.id] %>
+      <% end %>
+    </div>
+
+    <div class="value-form-actions">
+      <%= submit_tag "Save this month's values", class: "btn btn-primary" %>
+      <%= link_to "Cancel", root_path, class: "btn btn-ghost" %>
+    </div>
+  <% end %>
+</div>
