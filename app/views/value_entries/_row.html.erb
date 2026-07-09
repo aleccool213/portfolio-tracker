@@ -1,0 +1,13 @@
+<article class="card">
+  <div class="dot"><%= kind_emoji(account.kind) %></div>
+  <div class="body">
+    <div class="name"><%= account.name %></div>
+    <div class="meta"><%= account.institution %></div>
+  </div>
+  <div class="field">
+    <span class="field-prefix">$</span>
+    <%= number_field_tag "values[#{account.id}]", current&.amount,
+          step: 0.01, inputmode: "decimal", placeholder: "0.00",
+          "aria-label": "#{account.name} value" %>
+  </div>
+</article>
