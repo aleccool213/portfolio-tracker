@@ -25,4 +25,43 @@ sample_accounts.each do |attrs|
   end
 end
 
-puts "Seeded #{Account.count} accounts."
+# Monthly snapshots (AccountValue) so the dashboard has real dollar figures.
+#
+# Six months ending this month, keyed on (account, recorded_on) so re-seeding
+# never duplicates. Assets grow gently; the mortgage balance shrinks (and is
+# stored as a negative amount, since a liability is money owed). Credit cards
+# are intentionally value-less and get no snapshots.
+STARTING_AMOUNTS = {
+  "Managed TFSA" => 42_000,
+  "Self-directed TFSA" => 18_500,
+  "RRSP" => 61_000,
+  "Family RESP" => 12_300,
+  "FHSA" => 8_000,
+  "Crypto" => 3_400,
+  "Everyday chequing" => 4_200,
+  "Home mortgage" => -318_000
+}.freeze
+
+months = (0..5).map { |ago| ago.months.ago.to_date.beginning_of_month }.reverse
+
+Account.where.not(kind: "credit_card").find_each do |account|
+  start = STARTING_AMOUNTS[account.name]
+  next if start.nil?
+
+  months.each_with_index do |recorded_on, i|
+    amount =
+      if account.kind == "liability"
+        # Pay down ~$900/month against a negative (owed) balance.
+        start + (i * 900)
+      else
+        # Grow ~1.5% per month, compounded.
+        (start * (1.015**i)).round(2)
+      end
+
+    AccountValue.find_or_create_by!(account: account, recorded_on: recorded_on) do |value|
+      value.amount = amount
+    end
+  end
+end
+
+puts "Seeded #{Account.count} accounts and #{AccountValue.count} monthly values."
