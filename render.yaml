@@ -9,6 +9,11 @@
 #
 # For the real, persistent deploy (your Raspberry Pi), use the Dockerfile with
 # Kamal (config/deploy.yml) instead — that keeps a durable SQLite volume.
+#
+# Preview environments — each PR gets its own disposable instance.
+previews:
+  generation: automatic
+
 services:
   - type: web
     name: portfolio-tracker
