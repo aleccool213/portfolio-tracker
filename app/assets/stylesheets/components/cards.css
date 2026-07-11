@@ -23,6 +23,7 @@
 .card .body { flex: 1 1 auto; min-width: 0; }
 .card .name { font-weight: 600; }
 .card .meta { color: var(--ink-soft); font-size: 0.88rem; }
+.liability-meta { margin-top: 2px; }
 .card-actions {
   display: flex;
   align-items: center;

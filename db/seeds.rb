@@ -15,14 +15,26 @@ sample_accounts = [
   { name: "FHSA",                institution: "Wealthsimple", kind: "fhsa" },
   { name: "Crypto",              institution: "Wealthsimple", kind: "crypto" },
   { name: "Everyday chequing",   institution: "Wealthsimple", kind: "cash" },
-  { name: "Home mortgage",       institution: "RBC",          kind: "liability" },
+  { name: "Home mortgage",       institution: "RBC",          kind: "liability",
+    interest_rate: 4.89, term_months: 60, original_principal: 450_000 },
   { name: "Aeroplan Visa Infinite", institution: "TD",        kind: "credit_card" }
 ]
 
 sample_accounts.each do |attrs|
   Account.find_or_create_by!(name: attrs[:name], institution: attrs[:institution]) do |account|
-    account.kind = attrs[:kind]
+    account.assign_attributes(attrs.except(:name, :institution))
   end
+end
+
+# Mortgage details for the liability decision view (idempotent update).
+mortgage = Account.find_by(name: "Home mortgage", institution: "RBC")
+if mortgage
+  mortgage.update!(
+    kind: "liability",
+    interest_rate: 4.89,
+    term_months: 60,
+    original_principal: 450_000
+  )
 end
 
 # Monthly snapshots (AccountValue) so the dashboard has real dollar figures.

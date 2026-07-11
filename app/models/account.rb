@@ -8,14 +8,35 @@ class Account < ApplicationRecord
   validates :name, presence: true
   validates :kind, presence: true, inclusion: { in: KINDS }
 
+  # Liability-only details (mortgage rate, term, original principal).
+  validates :interest_rate, :term_months, :original_principal,
+            presence: true, if: :mortgage?
+  validates :interest_rate, numericality: { greater_than: 0 }, if: -> { mortgage? && interest_rate.present? }
+  validates :term_months, numericality: { only_integer: true, greater_than: 0 },
+            if: -> { mortgage? && term_months.present? }
+  validates :original_principal, numericality: { greater_than: 0 },
+            if: -> { mortgage? && original_principal.present? }
+
   # The most recent monthly snapshot, or nil if none recorded yet.
   def latest_value
-    account_values.order(recorded_on: :desc).first
+    if account_values.loaded?
+      account_values.max_by(&:recorded_on)
+    else
+      account_values.order(recorded_on: :desc).first
+    end
   end
 
   # This account's current worth (from its latest snapshot), or nil.
   def current_amount
     latest_value&.amount
+  end
+
+  def mortgage?
+    kind == "liability"
+  end
+
+  def credit_card?
+    kind == "credit_card"
   end
 
   # Human-friendly label for a kind, e.g. "non_registered" => "Non-registered".
