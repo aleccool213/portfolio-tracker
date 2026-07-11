@@ -6,18 +6,31 @@
     <p>Here's everything in one place.</p>
   </header>
 
-  <div class="reminder">
-    <span class="emoji">🗓️</span>
-    <div>
-      <strong>It's a fresh month — time for a check-in.</strong>
-      <span>On the 1st, jot down what each account is worth.</span>
-      <%= link_to "Enter this month's values →", value_entry_path, class: "reminder-link" %>
+  <% if @portfolio.needs_check_in? %>
+    <div class="reminder">
+      <span class="emoji">🗓️</span>
+      <div>
+        <strong>It's a fresh month — time for a check-in.</strong>
+        <span>On the 1st, jot down what each account is worth.</span>
+        <%= link_to "Enter this month's values →", value_entry_path, class: "reminder-link" %>
+      </div>
     </div>
-  </div>
+  <% else %>
+    <div class="reminder reminder-ok">
+      <span class="emoji">✅</span>
+      <div>
+        <strong>You're all caught up ✅</strong>
+        <span>This month's values are in. Nice work.</span>
+      </div>
+    </div>
+  <% end %>
 
   <section class="hero">
-    <div class="label">Accounts tracked</div>
-    <div class="value"><%= @accounts.size %></div>
+    <div class="label">Net worth</div>
+    <div class="value"><%= formatted_amount(@portfolio.net_worth) %></div>
+    <% if (change = change_badge(@portfolio.monthly_change)) %>
+      <div class="change"><%= change %></div>
+    <% end %>
   </section>
 
   <h2 class="section-title">Your accounts</h2>
@@ -45,5 +58,5 @@
     </div>
   <% end %>
 
-  <p class="footnote">Net-worth totals and rebalancing nudges are on the way.</p>
+  <p class="footnote">Rebalancing nudges and allocation views are on the way.</p>
 </div>

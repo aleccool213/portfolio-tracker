@@ -99,6 +99,7 @@ body {
   letter-spacing: -0.03em;
   margin-top: 4px;
 }
+.hero .change { margin-top: 10px; }
 
 /* Section heading */
 .section-title {

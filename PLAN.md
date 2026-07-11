@@ -158,7 +158,7 @@ what to test.
 - **Files:** a calc class under `app/models/` or `app/services/`, dashboard
   view, CSS, tests.
 
-### Milestone 5 — Net-worth summary + real monthly reminder
+### ✅ Milestone 5 — Net-worth summary + real monthly reminder (done)
 **Goal:** a headline net-worth number and a reminder that knows if you're behind.
 - **Calc:** total net worth = sum of current amounts, treating `liability`
   kinds as negative. Put it in a helper or a small `Portfolio` PORO.
