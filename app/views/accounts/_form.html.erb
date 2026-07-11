@@ -1,0 +1,32 @@
+<%= form_with model: account, class: "account-form" do |f| %>
+  <% if account.errors.any? %>
+    <div class="form-errors">
+      <strong>Couldn’t save this account:</strong>
+      <ul>
+        <% account.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-field">
+    <%= f.label :name %>
+    <%= f.text_field :name, required: true, autofocus: true, placeholder: "e.g. Managed TFSA" %>
+  </div>
+
+  <div class="form-field">
+    <%= f.label :institution %>
+    <%= f.text_field :institution, placeholder: "e.g. Wealthsimple" %>
+  </div>
+
+  <div class="form-field">
+    <%= f.label :kind %>
+    <%= f.select :kind, Account.kind_options, { prompt: "Choose a type…" }, required: true %>
+  </div>
+
+  <div class="form-actions">
+    <%= f.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", root_path, class: "btn btn-ghost" %>
+  </div>
+<% end %>

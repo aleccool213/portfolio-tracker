@@ -13,6 +13,9 @@ Rails.application.routes.draw do
   # worth this month. Singular resource — there's one "this month's entry".
   resource :value_entry, only: [ :show, :create ]
 
+  # Manage household accounts from the dashboard (list is the root).
+  resources :accounts, only: %i[new create edit update destroy]
+
   # Defines the root path route ("/")
   root "dashboard#index"
 end

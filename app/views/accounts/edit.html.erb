@@ -1,0 +1,12 @@
+<% content_for :title, "Edit #{@account.name}" %>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>Edit <%= @account.name %></h1>
+    <p>Update the name, institution, or type.</p>
+  </header>
+
+  <div class="form-card">
+    <%= render "form", account: @account %>
+  </div>
+</div>

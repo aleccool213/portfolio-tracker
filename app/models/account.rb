@@ -20,9 +20,18 @@ class Account < ApplicationRecord
 
   # Human-friendly label for a kind, e.g. "non_registered" => "Non-registered".
   def kind_label
+    self.class.kind_label_for(kind)
+  end
+
+  # Options for kind selects: [["TFSA", "tfsa"], ...].
+  def self.kind_options
+    KINDS.map { |k| [ kind_label_for(k), k ] }
+  end
+
+  def self.kind_label_for(kind)
     case kind
     when "tfsa", "rrsp", "resp", "fhsa" then kind.upcase
-    else kind.tr("_", " ").capitalize
+    else kind.to_s.tr("_", " ").capitalize
     end
   end
 end

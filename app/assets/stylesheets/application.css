@@ -102,11 +102,27 @@ body {
 .hero .change { margin-top: 10px; }
 
 /* Section heading */
+.section-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 28px 0 12px;
+}
+.section-title-row .section-title { margin: 0; }
 .section-title {
   font-size: 1.1rem;
   margin: 28px 0 12px;
   color: var(--ink-soft);
 }
+.section-action {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.section-action:hover { text-decoration: underline; }
 
 /* Account cards */
 .cards { display: grid; gap: 12px; }
@@ -132,6 +148,26 @@ body {
 .card .body { flex: 1 1 auto; min-width: 0; }
 .card .name { font-weight: 600; }
 .card .meta { color: var(--ink-soft); font-size: 0.88rem; }
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.82rem;
+}
+.card-actions a,
+.card-actions .link-button {
+  color: var(--ink-soft);
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.card-actions a:hover,
+.card-actions .link-button:hover { color: var(--accent); }
 .card .figures {
   display: flex;
   flex-direction: column;
@@ -256,3 +292,54 @@ body {
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
 .btn-ghost { background: transparent; color: var(--ink-soft); }
 .btn-ghost:hover { color: var(--ink); }
+
+/* Account form pages */
+.form-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 20px;
+}
+.form-errors {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  font-size: 0.92rem;
+}
+.form-errors ul {
+  margin: 6px 0 0;
+  padding-left: 1.2em;
+}
+.form-field { margin-bottom: 16px; }
+.form-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.form-field input,
+.form-field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--cream);
+  color: var(--ink);
+  font: inherit;
+  padding: 12px 14px;
+}
+.form-field input:focus,
+.form-field select:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+.form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 22px;
+}
