@@ -482,6 +482,14 @@ bin/importmap audit
   via `PortfolioMcp` + `bin/mcp-server` (JSON-RPC over stdio).
 - Tools never write; no auth layer (local/self-hosted).
 
+### Integration flows (synthetic E2E, no browser)
+**Goal:** multi-step journeys through the real Rails stack over HTTP.
+- `ActionDispatch::IntegrationTest` under `test/integration/` — boots the app,
+  hits routes, follows redirects, asserts HTML + DB state.
+- No Chrome/Capybara system suite (too heavy for this self-hosted app).
+- Cover: monthly check-in → caught-up dashboard; account create/edit/destroy
+  round-trips; dashboard still assembles after mutations.
+
 ---
 
 ## Running locally
