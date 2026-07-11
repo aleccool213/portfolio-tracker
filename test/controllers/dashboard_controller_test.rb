@@ -27,4 +27,10 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_select ".card .amount", text: "—"
   end
+
+  test "shows a month-over-month badge for an account with two months of values" do
+    get root_url
+    # managed_tfsa: May 42_000 → June 43_500 ≈ +3.6%
+    assert_select ".badge.badge-up", text: /▲ \+3\.6%/
+  end
 end

@@ -111,7 +111,7 @@ what to test.
 
 ---
 
-### Milestone 2 — `AccountValue` model (data only)
+### ✅ Milestone 2 — `AccountValue` model (data only) (done)
 **Goal:** a monthly-snapshot model, with no UI beyond showing the latest value.
 - **Migrate:** `AccountValue` — `account:references`, `recorded_on:date`,
   `amount:decimal` (precision 12, scale 2). Add a unique index on
@@ -132,7 +132,7 @@ what to test.
 - **Files:** migration, `app/models/account_value.rb`, `app/models/account.rb`,
   `app/views/dashboard/index.html.erb`, a helper, `db/seeds.rb`, fixtures + tests.
 
-### Milestone 3 — Value-entry page
+### ✅ Milestone 3 — Value-entry page (done)
 **Goal:** a dedicated page to record this month's value for each account.
 - **Route:** `resource :value_entry, only: [:show, :create]` (or a
   `MonthlyValuesController`). Link to it from the dashboard reminder banner.
@@ -145,7 +145,7 @@ what to test.
   month; re-posting updates rather than duplicates.
 - **Files:** route, one controller, one view, a small form partial, tests.
 
-### Milestone 4 — "+5% vs last month" badges
+### ✅ Milestone 4 — "+5% vs last month" badges (done)
 **Goal:** show month-over-month change per account on the dashboard.
 - **Helper/PORO `MonthlyChange`:** given an account, compare the current
   month's value to the previous month's; return `{ pct:, direction: }`.
