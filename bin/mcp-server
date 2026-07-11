@@ -1,0 +1,93 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Read-only MCP server over stdio for Portfolio Tracker.
+# Loads the Rails environment, then speaks JSON-RPC 2.0 (MCP-style) on stdin/stdout.
+#
+# Usage:
+#   bin/mcp-server
+#
+# Tools: list_accounts, get_account_values, net_worth, allocation
+
+require_relative "../config/environment"
+
+mcp = PortfolioMcp.new
+PROTOCOL_VERSION = "2024-11-05"
+
+def reply(id:, result: nil, error: nil)
+  message = { jsonrpc: "2.0", id: id }
+  if error
+    message[:error] = error
+  else
+    message[:result] = result
+  end
+  $stdout.puts(JSON.generate(message))
+  $stdout.flush
+end
+
+def notify(method:, params: {})
+  $stdout.puts(JSON.generate({ jsonrpc: "2.0", method: method, params: params }))
+  $stdout.flush
+end
+
+$stdin.each_line do |line|
+  line = line.strip
+  next if line.empty?
+
+  begin
+    message = JSON.parse(line)
+  rescue JSON::ParserError => e
+    reply(id: nil, error: { code: -32700, message: "Parse error: #{e.message}" })
+    next
+  end
+
+  id = message["id"]
+  method = message["method"]
+  params = message["params"] || {}
+
+  case method
+  when "initialize"
+    reply(
+      id: id,
+      result: {
+        protocolVersion: PROTOCOL_VERSION,
+        capabilities: { tools: {} },
+        serverInfo: { name: "portfolio-tracker", version: "0.1.0" }
+      }
+    )
+  when "notifications/initialized", "initialized"
+    # No response for notifications.
+    next
+  when "tools/list"
+    tools = mcp.tools.map do |tool|
+      {
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.input_schema
+      }
+    end
+    reply(id: id, result: { tools: tools })
+  when "tools/call"
+    name = params["name"]
+    arguments = params["arguments"] || {}
+    begin
+      payload = mcp.call(name, arguments)
+      reply(
+        id: id,
+        result: {
+          content: [ { type: "text", text: JSON.pretty_generate(payload) } ],
+          structuredContent: payload,
+          isError: payload.is_a?(Hash) && payload.key?(:error)
+        }
+      )
+    rescue KeyError => e
+      reply(id: id, error: { code: -32602, message: "Invalid params: #{e.message}" })
+    rescue ActiveRecord::RecordNotFound => e
+      reply(id: id, error: { code: -32004, message: e.message })
+    end
+  when "ping"
+    reply(id: id, result: {})
+  else
+    reply(id: id, error: { code: -32601, message: "Method not found: #{method}" }) if id
+  end
+end

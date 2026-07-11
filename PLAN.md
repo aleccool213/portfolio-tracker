@@ -476,11 +476,11 @@ bin/importmap audit
 - **Tests:** suggestions exclude kinds the user already holds.
 - **Files:** a constant/PORO, a view partial, tests.
 
-### Milestone 12 — MCP server (read-only)
+### ✅ Milestone 12 — MCP server (read-only) (done)
 **Goal:** let an LLM answer questions over the real numbers.
 - Expose read-only tools (list accounts, get values, net worth, allocation)
-  via an MCP server. Design after the dashboard is complete; spec this milestone
-  in more detail when we reach it.
+  via `PortfolioMcp` + `bin/mcp-server` (JSON-RPC over stdio).
+- Tools never write; no auth layer (local/self-hosted).
 
 ---
 
