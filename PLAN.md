@@ -461,7 +461,7 @@ bin/importmap audit
   when there are ≥2 values.
 - **Files:** a helper, a `_sparkline` partial, view wiring, tests.
 
-### Milestone 10 — Allocation & gentle nudges
+### ✅ Milestone 10 — Allocation & gentle nudges (done)
 **Goal:** answer "am I diversified / too safe?" at a glance.
 - **Calc:** totals by `kind` and each kind's % of assets. Flag concentration
   (any single account > 50% of assets, or cash > some threshold).

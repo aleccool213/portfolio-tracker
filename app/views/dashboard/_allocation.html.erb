@@ -1,0 +1,37 @@
+<% if allocation.slices.any? %>
+  <section class="allocation">
+    <h2 class="section-title">Where your assets sit</h2>
+
+    <div class="alloc-bar" role="img" aria-label="Asset allocation breakdown">
+      <% allocation.slices.each do |slice| %>
+        <div
+          class="alloc-segment kind-<%= slice.kind %>"
+          style="width: <%= slice.pct %>%"
+          title="<%= slice.label %>: <%= number_to_percentage(slice.pct, precision: 1) %>">
+        </div>
+      <% end %>
+    </div>
+
+    <ul class="alloc-legend">
+      <% allocation.slices.each do |slice| %>
+        <li>
+          <span class="swatch kind-<%= slice.kind %>"></span>
+          <span class="alloc-label"><%= slice.label %></span>
+          <span class="alloc-pct"><%= number_with_precision(slice.pct, precision: 1) %>%</span>
+          <span class="alloc-amt"><%= formatted_amount(slice.amount) %></span>
+        </li>
+      <% end %>
+    </ul>
+
+    <% if allocation.nudges.any? %>
+      <div class="nudges">
+        <% allocation.nudges.each do |nudge| %>
+          <div class="nudge">
+            <span class="emoji">💡</span>
+            <span><%= nudge.message %></span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
