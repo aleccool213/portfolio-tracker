@@ -17,3 +17,11 @@ mortgage:
   interest_rate: 4.89
   term_months: 60
   original_principal: 450000.00
+
+aeroplan:
+  name: Aeroplan Visa Infinite
+  institution: TD
+  kind: credit_card
+  annual_fee: 139.00
+  perks: Aeroplan points, first checked bag free.
+  renewal_on: 2026-11-01

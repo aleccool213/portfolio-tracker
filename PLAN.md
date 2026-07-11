@@ -440,7 +440,7 @@ bin/importmap audit
 - **Files:** migration, `app/models/account.rb`, account form + dashboard views,
   seed, tests.
 
-### Milestone 8 — Credit-card perks (no balances)
+### ✅ Milestone 8 — Credit-card perks (no balances) (done)
 **Goal:** a place to remember every card and why you have it.
 - **Migrate:** add nullable columns for `credit_card` accounts —
   `annual_fee:decimal`, `perks:text`, `renewal_on:date`. **No balance field.**

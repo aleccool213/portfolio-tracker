@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_11_115014) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_11_115057) do
   create_table "account_values", force: :cascade do |t|
     t.integer "account_id", null: false
     t.decimal "amount", precision: 12, scale: 2, null: false
@@ -22,12 +22,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_115014) do
   end
 
   create_table "accounts", force: :cascade do |t|
+    t.decimal "annual_fee", precision: 8, scale: 2
     t.datetime "created_at", null: false
     t.string "institution"
     t.decimal "interest_rate", precision: 6, scale: 3
     t.string "kind"
     t.string "name"
     t.decimal "original_principal", precision: 12, scale: 2
+    t.text "perks"
+    t.date "renewal_on"
     t.integer "term_months"
     t.datetime "updated_at", null: false
   end
