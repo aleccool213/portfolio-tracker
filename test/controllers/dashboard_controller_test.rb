@@ -81,4 +81,10 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".card:not(.card-perk) .name", text: "Aeroplan Visa Infinite", count: 0
     assert_select ".card-perk .name", text: "Aeroplan Visa Infinite"
   end
+
+  test "renders a sparkline for accounts with two or more values" do
+    get root_url
+    assert_select ".card:not(.card-perk) svg.sparkline", minimum: 1
+    assert_select "svg.sparkline polyline"
+  end
 end

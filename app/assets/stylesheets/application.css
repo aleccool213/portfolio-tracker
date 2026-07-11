@@ -366,3 +366,8 @@ body {
   color: var(--ink-soft);
   margin-left: 2px;
 }
+.sparkline {
+  color: var(--violet);
+  display: block;
+  margin-top: 2px;
+}

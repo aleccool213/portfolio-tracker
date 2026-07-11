@@ -448,7 +448,7 @@ bin/importmap audit
 - **Tests:** cards render their perks; cards are excluded from net worth.
 - **Files:** migration, model, a cards partial/page, seed, tests.
 
-### Milestone 9 — Per-account trend (server-rendered)
+### ✅ Milestone 9 — Per-account trend (server-rendered) (done)
 **Goal:** a small history chart per account, no JS build.
 - **Sparkline:** render an inline `<svg>` from an account's `account_values`
   (a helper that maps values to points). No charting library, no import.
