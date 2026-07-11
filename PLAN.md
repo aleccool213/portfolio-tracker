@@ -470,7 +470,7 @@ bin/importmap audit
 - **Tests:** allocation math; a nudge appears for a concentrated fixture.
 - **Files:** a calc class, a view section/partial, tests.
 
-### Milestone 11 — Canadian account suggestions
+### ✅ Milestone 11 — Canadian account suggestions (done)
 **Goal:** lightweight, Canadian-specific "what should I open?" hints.
 - **Data:** a small static table of account types (TFSA/RRSP/FHSA/RESP) with
   one-line "who it's for" copy and 2026 contribution-room notes (hard-coded,
