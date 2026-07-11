@@ -95,4 +95,12 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     # Only TFSA has a positive value among fixtures → 100% concentration nudge
     assert_select ".nudge", text: /Managed TFSA/
   end
+
+  test "shows Canadian suggestions for missing registered kinds" do
+    get root_url
+    assert_select ".suggestions .section-title", text: "Ideas for Canada"
+    assert_select ".card-suggestion .name", text: "FHSA"
+    assert_select ".card-suggestion .name", text: "RESP"
+    assert_select ".card-suggestion .name", text: "TFSA", count: 0
+  end
 end

@@ -420,3 +420,12 @@ body {
   color: var(--ink);
 }
 .nudge .emoji { line-height: 1.2; }
+
+/* Canadian account suggestions */
+.suggestions { margin-top: 28px; }
+.room-note {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
