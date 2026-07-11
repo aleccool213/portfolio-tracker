@@ -23,6 +23,7 @@ class PortfolioTest < ActiveSupport::TestCase
     mortgage = accounts(:mortgage)
     mortgage.account_values.destroy_all
     AccountValue.create!(account: mortgage, recorded_on: Date.new(2026, 6, 1), amount: 200_000)
+    mortgage.account_values.reload
 
     portfolio = Portfolio.new([ accounts(:managed_tfsa), mortgage ])
     # 43_500 + (-200_000)

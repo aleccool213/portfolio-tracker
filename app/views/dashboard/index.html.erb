@@ -46,6 +46,14 @@
           <div class="body">
             <div class="name"><%= account.name %></div>
             <div class="meta"><%= account.institution %></div>
+            <% if account.mortgage? && account.interest_rate.present? %>
+              <div class="meta liability-meta">
+                <%= number_to_percentage(account.interest_rate, precision: 2) %>
+                <% if account.term_months.present? %>
+                  · <%= account.term_months / 12 %> yr term
+                <% end %>
+              </div>
+            <% end %>
             <div class="card-actions">
               <%= link_to "Edit", edit_account_path(account) %>
               <%= button_to "Delete", account_path(account), method: :delete,

@@ -44,4 +44,33 @@ class AccountTest < ActiveSupport::TestCase
   test "current_amount is nil when no values are recorded" do
     assert_nil accounts(:rrsp).current_amount
   end
+
+  test "mortgage? is true for liability accounts" do
+    assert accounts(:mortgage).mortgage?
+    assert_not accounts(:managed_tfsa).mortgage?
+  end
+
+  test "liability accounts require rate term and principal" do
+    account = Account.new(name: "Mortgage", kind: "liability")
+    assert_not account.valid?
+    assert_includes account.errors[:interest_rate], "can't be blank"
+    assert_includes account.errors[:term_months], "can't be blank"
+    assert_includes account.errors[:original_principal], "can't be blank"
+  end
+
+  test "liability accounts are valid with rate term and principal" do
+    account = Account.new(
+      name: "Mortgage",
+      kind: "liability",
+      interest_rate: 4.5,
+      term_months: 60,
+      original_principal: 400_000
+    )
+    assert account.valid?
+  end
+
+  test "non-liability accounts ignore liability fields" do
+    account = Account.new(name: "TFSA", kind: "tfsa")
+    assert account.valid?
+  end
 end

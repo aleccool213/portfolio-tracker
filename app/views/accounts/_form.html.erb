@@ -25,6 +25,23 @@
     <%= f.select :kind, Account.kind_options, { prompt: "Choose a type…" }, required: true %>
   </div>
 
+  <p class="form-hint">Liability details (used for mortgages — leave blank for other types):</p>
+
+  <div class="form-field">
+    <%= f.label :interest_rate, "Interest rate (%)" %>
+    <%= f.number_field :interest_rate, step: 0.001, min: 0, placeholder: "e.g. 4.89" %>
+  </div>
+
+  <div class="form-field">
+    <%= f.label :term_months, "Term (months)" %>
+    <%= f.number_field :term_months, step: 1, min: 1, placeholder: "e.g. 60" %>
+  </div>
+
+  <div class="form-field">
+    <%= f.label :original_principal %>
+    <%= f.number_field :original_principal, step: 0.01, min: 0, placeholder: "e.g. 450000" %>
+  </div>
+
   <div class="form-actions">
     <%= f.submit class: "btn btn-primary" %>
     <%= link_to "Cancel", root_path, class: "btn btn-ghost" %>

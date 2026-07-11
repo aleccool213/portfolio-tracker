@@ -424,7 +424,7 @@ bin/importmap audit
 - Stack: M4 → M5 → **M6 manage accounts** → M7+.
 - Title: "Add account CRUD from the dashboard (Milestone 6)".
 
-### Milestone 7 — Mortgage / liability details
+### ✅ Milestone 7 — Mortgage / liability details (done)
 **Goal:** capture the numbers a mortgage decision needs.
 - **Migrate:** add nullable columns used only by `liability` accounts —
   `interest_rate:decimal`, `term_months:integer`, `original_principal:decimal`.

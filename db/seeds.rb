@@ -25,6 +25,17 @@ sample_accounts.each do |attrs|
   end
 end
 
+# Mortgage details for the liability decision view (idempotent update).
+mortgage = Account.find_by(name: "Home mortgage", institution: "RBC")
+if mortgage
+  mortgage.update!(
+    kind: "liability",
+    interest_rate: 4.89,
+    term_months: 60,
+    original_principal: 450_000
+  )
+end
+
 # Monthly snapshots (AccountValue) so the dashboard has real dollar figures.
 #
 # Six months ending this month, keyed on (account, recorded_on) so re-seeding
