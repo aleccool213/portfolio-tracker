@@ -349,3 +349,20 @@ body {
   color: var(--ink-soft);
 }
 .liability-meta { margin-top: 2px; }
+.section-note {
+  margin: -4px 0 12px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.card-perk .perks {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.fee-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-left: 2px;
+}
