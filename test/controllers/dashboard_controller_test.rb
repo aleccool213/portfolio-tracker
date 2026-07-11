@@ -87,4 +87,12 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".card:not(.card-perk) svg.sparkline", minimum: 1
     assert_select "svg.sparkline polyline"
   end
+
+  test "shows allocation breakdown and a concentration nudge" do
+    get root_url
+    assert_select ".allocation .alloc-bar"
+    assert_select ".alloc-legend"
+    # Only TFSA has a positive value among fixtures → 100% concentration nudge
+    assert_select ".nudge", text: /Managed TFSA/
+  end
 end
