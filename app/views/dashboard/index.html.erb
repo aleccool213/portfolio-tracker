@@ -33,7 +33,10 @@
     <% end %>
   </section>
 
-  <h2 class="section-title">Your accounts</h2>
+  <div class="section-title-row">
+    <h2 class="section-title">Your accounts</h2>
+    <%= link_to "Add account", new_account_path, class: "section-action" %>
+  </div>
 
   <% if @accounts.any? %>
     <div class="cards">
@@ -43,6 +46,12 @@
           <div class="body">
             <div class="name"><%= account.name %></div>
             <div class="meta"><%= account.institution %></div>
+            <div class="card-actions">
+              <%= link_to "Edit", edit_account_path(account) %>
+              <%= button_to "Delete", account_path(account), method: :delete,
+                    form: { data: { turbo_confirm: "Remove #{account.name}? Its value history goes too." } },
+                    class: "link-button" %>
+            </div>
           </div>
           <div class="figures">
             <div class="amount"><%= formatted_amount(account.current_amount) %></div>
@@ -54,7 +63,7 @@
     </div>
   <% else %>
     <div class="empty">
-      <p>No accounts yet. Seed data usually fills this in — add your own soon.</p>
+      <p>No accounts yet. <%= link_to "Add an account", new_account_path %> to get started.</p>
     </div>
   <% end %>
 

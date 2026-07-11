@@ -288,7 +288,7 @@ bin/importmap audit
 - Stack: M4 badges → M5 net worth / reminder → later milestones.
 - Title: "Add net-worth hero and smart monthly reminder (Milestone 5)".
 
-### Milestone 6 — Manage accounts (CRUD)
+### ✅ Milestone 6 — Manage accounts (CRUD) (done)
 **Goal:** add, edit, and delete accounts from the UI.
 - **Resource:** `resources :accounts` (`new/create/edit/update/destroy`;
   `index` can redirect to the dashboard). `kind` is a select of `Account::KINDS`.

@@ -55,4 +55,10 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     # managed_tfsa: May 42_000 → June 43_500 ≈ +3.6%
     assert_select ".badge.badge-up", text: /▲ \+3\.6%/
   end
+
+  test "shows add and edit account affordances" do
+    get root_url
+    assert_select "a[href=?]", new_account_path, text: "Add account"
+    assert_select "a[href=?]", edit_account_path(accounts(:managed_tfsa)), text: "Edit"
+  end
 end

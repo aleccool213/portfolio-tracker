@@ -27,6 +27,12 @@ class AccountTest < ActiveSupport::TestCase
     assert_equal "Liability", accounts(:mortgage).kind_label
   end
 
+  test "kind_options pairs labels with kind values" do
+    options = Account.kind_options
+    assert_includes options, [ "TFSA", "tfsa" ]
+    assert_includes options, [ "Credit card", "credit_card" ]
+  end
+
   test "latest_value returns the most recent snapshot" do
     assert_equal account_values(:managed_tfsa_june), accounts(:managed_tfsa).latest_value
   end
