@@ -33,6 +33,7 @@
           </div>
           <div class="figures">
             <div class="amount"><%= formatted_amount(account.current_amount) %></div>
+            <%= monthly_change_badge(account) %>
             <div class="tag"><%= account.kind_label %></div>
           </div>
         </article>
@@ -44,5 +45,5 @@
     </div>
   <% end %>
 
-  <p class="footnote">Values, % change vs last month, and rebalancing nudges are on the way.</p>
+  <p class="footnote">Net-worth totals and rebalancing nudges are on the way.</p>
 </div>
