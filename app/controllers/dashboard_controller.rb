@@ -1,5 +1,6 @@
 class DashboardController < ApplicationController
   def index
-    @accounts = Account.order(:kind, :name)
+    @accounts = Account.includes(:account_values).order(:kind, :name)
+    @portfolio = Portfolio.new(@accounts)
   end
 end

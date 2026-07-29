@@ -158,18 +158,135 @@ what to test.
 - **Files:** a calc class under `app/models/` or `app/services/`, dashboard
   view, CSS, tests.
 
-### Milestone 5 — Net-worth summary + real monthly reminder
+### ✅ Milestone 5 — Net-worth summary + real monthly reminder (done)
 **Goal:** a headline net-worth number and a reminder that knows if you're behind.
 - **Calc:** total net worth = sum of current amounts, treating `liability`
   kinds as negative. Put it in a helper or a small `Portfolio` PORO.
 - **Hero:** replace the "accounts tracked" count with formatted net worth and a
   net month-over-month % change.
-- **Reminder logic:** show the "time for a check-in" banner **only when** the
-  current month has no values for one or more asset accounts; otherwise show a
-  calm "you're all caught up ✅" state.
+- **Reminder logic:** show the "time for a check-in" banner **only when**
+  the current month has no values for one or more trackable accounts;
+  otherwise show a calm "you're all caught up ✅" state.
 - **Tests:** net-worth calc (assets minus liabilities); reminder shows when a
   current-month value is missing and hides when all present.
 - **Files:** helper/PORO, dashboard view, tests.
+
+#### Implementation plan (stacked on M4)
+
+**Branch:** `milestone-5-net-worth-reminder` → stacks on
+`milestone-4-monthly-change-badges` → `master`.
+
+**Current baseline (what M5 builds on):**
+- Dashboard always shows a static check-in reminder (not data-driven).
+- Hero shows "Accounts tracked" + count, not dollars.
+- `Account#current_amount` / `latest_value` and `MonthlyChange` exist per account.
+- Value entry already uses **trackable** accounts =
+  `Account.where.not(kind: "credit_card")` and `recorded_on =
+  Date.current.beginning_of_month`. Match that definition for the reminder.
+- Seeds store liabilities as **negative** amounts; credit cards have no values
+  and must stay out of net worth (also called out in M8).
+
+**1. `Portfolio` PORO** (`app/models/portfolio.rb`)
+
+```ruby
+# Portfolio.new(accounts).net_worth
+# Portfolio.new(accounts).monthly_change  # => MonthlyChange::Result or nil
+# Portfolio.new(accounts).needs_check_in? # true if any trackable account
+#                                         # missing a value for this month
+```
+
+Rules:
+- **Trackable accounts** for net worth + check-in: exclude `credit_card` only
+  (same as value-entry). Include liabilities — they affect net worth and still
+  get monthly balances.
+- **Signed amount:** if `kind == "liability"`, contribute `-amount.abs` so a
+  positive mortgage balance never accidentally increases net worth; non-
+  liabilities use the amount as stored. Treat `nil` current amount as `0` for
+  the total (card still shows "—" individually).
+- **Net worth:** sum of signed current amounts across trackable accounts.
+- **Portfolio MoM %:** compare two portfolio totals built from snapshots on
+  `this_month = Date.current.beginning_of_month` and
+  `prior_month = this_month - 1.month`. For each trackable account, look up
+  `account_values.find_by(recorded_on: month)` (not `latest_value`, which can
+  lag or skip months). Sum signed amounts for each month; if either total is
+  missing enough data that prior total is zero (or there are no prior-month
+  rows at all), return `nil` and hide the hero badge. Reuse the same
+  direction / rounding conventions as `MonthlyChange` (1 decimal, `:up` /
+  `:down` / `:flat`, divide by `prior.abs`).
+- **`needs_check_in?`:** true when any trackable account has **no**
+  `AccountValue` for `Date.current.beginning_of_month`. False only when every
+  trackable account has a row for the current month (including liabilities).
+
+Optional small helpers on `Account` if it keeps the PORO clean:
+- `trackable?` → `kind != "credit_card"`
+- `signed_amount(amount)` or `value_on(date)`
+
+**2. Dashboard controller**
+
+```ruby
+@accounts = Account.order(:kind, :name)
+@portfolio = Portfolio.new(@accounts)
+```
+
+Keep the card list as today (all accounts, including credit cards).
+
+**3. Dashboard view**
+
+- **Hero:** label "Net worth"; value = `formatted_amount(@portfolio.net_worth)`.
+  Render a portfolio-level change badge (reuse `.badge` / `.badge-up|down|flat`
+  styles from M4; either call into a small helper that accepts a
+  `MonthlyChange::Result`, or extract the arrow/label formatting from
+  `monthly_change_badge`).
+- **Reminder:** two states sharing the existing `.reminder` card style:
+  - Behind (`needs_check_in?`): current copy + link to `value_entry_path`.
+  - Caught up: calm copy ("You're all caught up ✅") and **no** entry CTA
+    (optional soft link is fine; default is no pressure).
+- Soft-update footnote once net worth ships (e.g. rebalancing nudges only).
+
+**4. CSS**
+
+Minimal: only if the hero needs a sub-line for the MoM badge under the big
+number (e.g. `.hero .change`). Prefer reusing `.badge` as-is. Caught-up
+reminder can reuse `.reminder` with a different emoji; no new palette.
+
+**5. Tests**
+
+| File | Cases |
+|---|---|
+| `test/models/portfolio_test.rb` (new) | Net worth = assets + signed liabilities; credit card ignored; nil amounts treated as 0; MoM up/down/nil; `needs_check_in?` true when a trackable account lacks this month; false when all present |
+| `test/controllers/dashboard_controller_test.rb` | Hero shows net-worth dollars (not "Accounts tracked"); reminder in check-in state with current fixtures (no July values as of 2026-07); separate test that seeds current-month values for every trackable fixture account and asserts caught-up copy / no check-in CTA |
+
+Fixture note: today fixtures only have May/June 2026 values, so default
+dashboard tests naturally hit the "needs check-in" path in July 2026+. Avoid
+freezing `Date.current` unless a test becomes flaky across month boundaries;
+prefer creating explicit `recorded_on: Date.current.beginning_of_month` rows
+in the caught-up test.
+
+**6. Out of scope**
+
+- Account CRUD (M6), mortgage detail columns (M7), credit-card perks page (M8),
+  sparklines, allocation.
+- No schema / seed changes required (seeds already produce multi-month history
+  for Render; reminder will correctly show check-in until someone enters this
+  month on the value-entry page).
+- No JS / import maps.
+
+**7. Verification**
+
+```bash
+bin/rails test
+bin/rubocop
+bin/brakeman --no-pager
+bin/bundler-audit
+bin/importmap audit
+```
+
+**8. Suggested PR shape**
+
+- Single implement PR on this branch (replace this plan-only commit or amend
+  via `gt modify` once code lands).
+- Stack: M4 badges → M5 net worth / reminder → later milestones.
+- Title: "Add net-worth hero and smart monthly reminder (Milestone 5)".
 
 ### Milestone 6 — Manage accounts (CRUD)
 **Goal:** add, edit, and delete accounts from the UI.

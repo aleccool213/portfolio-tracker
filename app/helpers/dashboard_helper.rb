@@ -27,7 +27,11 @@ module DashboardHelper
   # A small ▲/▼ badge for month-over-month change, or nil when none.
   # Example: <span class="badge badge-up">▲ +3.6%</span>
   def monthly_change_badge(account)
-    change = MonthlyChange.for(account)
+    change_badge(MonthlyChange.for(account))
+  end
+
+  # Renders a MonthlyChange::Result (account or portfolio), or nothing.
+  def change_badge(change)
     return if change.nil?
 
     arrow = { up: "▲", down: "▼", flat: "–" }.fetch(change.direction)

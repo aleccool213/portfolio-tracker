@@ -9,11 +9,16 @@ class MonthlyChange
     return nil if values.size < 2
 
     current, prior = values
-    return nil if prior.amount.zero?
+    from_amounts(current.amount, prior.amount)
+  end
 
-    # prior.abs keeps liability balances (stored negative) from flipping the
-    # sign of the percentage when the debt is paid down or grows.
-    pct = ((current.amount - prior.amount) / prior.amount.abs * 100).round(1)
+  # Compare two numeric totals (account or portfolio). prior.abs keeps liability
+  # balances (stored negative) from flipping the percentage sign.
+  def self.from_amounts(current, prior)
+    return nil if prior.nil? || current.nil?
+    return nil if prior.zero?
+
+    pct = ((current - prior) / prior.abs * 100).round(1)
 
     direction =
       if pct.positive?
