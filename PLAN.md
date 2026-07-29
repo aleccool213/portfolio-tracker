@@ -101,7 +101,7 @@ what to test.
 - The Render preview must still boot with seed data. If a milestone adds a
   model, extend `db/seeds.rb` so the dashboard has something to show.
 - Match the existing warm hey.com style (reuse the CSS variables and card
-  patterns already in `app/assets/stylesheets/application.css`).
+  patterns already under `app/assets/stylesheets/`).
 
 ---
 
@@ -375,14 +375,17 @@ Form details:
 - Card layout: keep amount/badge primary; put actions under meta or as a small
   `.card-actions` row so mobile stays readable.
 
-**5. CSS** (`application.css`)
+**5. CSS** (`app/assets/stylesheets/`)
 
+- Split plain CSS files (no build step): `tokens`, `base`, `components/*`.
 - `.section-title-row` (title + add link flex).
 - `.card-actions` (small gap, muted links).
 - Simple form styles: `.form-field`, label, input/select (border, cream focus,
   radius) — only what's needed for new/edit to not look broken.
 - Reuse existing buttons; optional `.btn-danger` for delete is nice-to-have,
   not required (confirm dialog is the safety net).
+- New feature styles: add a file under `components/` or `pages/` and link it
+  from the layout rather than growing one mega-file.
 
 **6. Tests** (`test/controllers/accounts_controller_test.rb`)
 

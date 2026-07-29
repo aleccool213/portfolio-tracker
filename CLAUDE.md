@@ -69,10 +69,12 @@ git status --short | grep -iE "master.key|\.sqlite3|/log/|/tmp/" && echo "STOP: 
   (`config/deploy.yml`). SQLite persists on a volume under `storage/`.
 
 ### 4. Styling
-Reuse the CSS custom properties and card patterns already in
-`app/assets/stylesheets/application.css` (warm cream palette, rounded cards,
-light/dark aware). The app layout references the stylesheet as
-`stylesheet_link_tag "application"`.
+Reuse the CSS custom properties and card patterns already under
+`app/assets/stylesheets/` (split plain CSS files — `tokens`, `base`,
+`components/*`; warm cream palette, rounded cards, light/dark aware). The
+layout loads them via multiple `stylesheet_link_tag` entries (no CSS build
+step, no `@import`). Add a new file + link tag when a feature needs its own
+styles rather than growing one mega-file.
 
 ### 5. This container's environment (only relevant for fresh tool installs)
 - Ruby 3.3.6 and `bin/*` binstubs work out of the box. If you ever install the
