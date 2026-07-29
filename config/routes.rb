@@ -16,6 +16,11 @@ Rails.application.routes.draw do
   # Manage household accounts from the dashboard (list is the root).
   resources :accounts, only: %i[new create edit update destroy]
 
+  # Bulk load accounts + monthly values from a CSV (for existing portfolios).
+  resource :import, only: [ :show, :create ] do
+    get :template, on: :collection
+  end
+
   # Defines the root path route ("/")
   root "dashboard#index"
 end

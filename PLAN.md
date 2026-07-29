@@ -27,7 +27,7 @@ cards, friendly copy, one clear thing per screen.
 | **No JS build step** | Frontend uses **Hotwire (Turbo + Stimulus) over import maps** only. Newest browsers only. |
 | **Testable per-PR from a phone** | Every PR deploys to **Render** (see `render.yaml`) with **seeded test data**, so it can be poked from a phone as we build. |
 | **Playful & simple** | hey.com-style warm UI; the dashboard shows one clear number per product. |
-| **Future** | An **MCP server** (after the dashboard is done) so an LLM can answer questions and drive insights over the data. |
+| **Future** | An **MCP server** (later, optional) so an LLM can answer questions over the data. Prefer real data in the app first. |
 
 ### Tech stack
 - **Rails 8.1**, Ruby 3.3
@@ -479,11 +479,31 @@ bin/importmap audit
 - **Tests:** suggestions exclude kinds the user already holds.
 - **Files:** a constant/PORO, a view partial, tests.
 
-### Milestone 12 — MCP server (read-only)
-**Goal:** let an LLM answer questions over the real numbers.
-- Expose read-only tools (list accounts, get values, net worth, allocation)
-  via an MCP server. Design after the dashboard is complete; spec this milestone
-  in more detail when we reach it.
+### Milestone 12 — CSV portfolio importer
+**Goal:** mass-import an existing household portfolio from a spreadsheet so the
+dashboard shows real numbers without typing every account/month by hand.
+
+**Branch:** `milestone-12-csv-import` → stacks on `milestone-5-net-worth-reminder`
+(parallel to the later feature stack; ships as soon as M5 is in).
+
+- **CSV format** (header row, UTF-8):
+  `name,institution,kind,recorded_on,amount`
+  - Match accounts on `(name, institution)`; create when missing (`kind` required).
+  - Upsert `AccountValue` on `(account, recorded_on)` when both date + amount present.
+  - Normalize `recorded_on` to the 1st of the month.
+  - Allow `$` / commas in amounts; liabilities negative.
+  - Credit cards: account-only rows (no balances).
+  - Invalid rows fail the whole import with a clear line-numbered message.
+- **UI:** `/import` — file upload, short format help, downloadable sample CSV.
+  Link from the dashboard footnote.
+- **PORO `PortfolioCsvImport`:** parse + transaction + result summary
+  (accounts created/matched, values saved, errors).
+- **Tests:** happy path (create accounts + values), upsert on re-import, reject
+  bad kind/date/amount, reject credit-card balances, missing columns, template
+  download.
+- **Files:** model PORO, controller, view, routes, CSS, dashboard link, tests.
+- **Out of scope:** brokerage statement parsers, FX conversion, MCP server
+  (deferred indefinitely).
 
 ---
 

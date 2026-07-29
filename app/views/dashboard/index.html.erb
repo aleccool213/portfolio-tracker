@@ -119,5 +119,8 @@
 
   <%= render "suggestions", suggestions: @suggestions %>
 
-  <p class="footnote">Not financial advice — just a calmer picture of your household money.</p>
+  <p class="footnote">
+    Bringing numbers over from a spreadsheet?
+    <%= link_to "Import a CSV →", import_path %>
+  </p>
 </div>

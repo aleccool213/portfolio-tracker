@@ -1,0 +1,54 @@
+/* CSV import */
+
+.import-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+.import-form { width: 100%; }
+.file-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--cream-2);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.file-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.file-field input[type="file"] {
+  font: inherit;
+  color: var(--ink);
+  max-width: 100%;
+}
+.import-help-copy {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin: 0 0 12px;
+}
+.import-help-copy code,
+.import-help-list code {
+  font-size: 0.88em;
+  background: var(--cream-2);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.import-help-list {
+  margin: 0 0 16px;
+  padding-left: 1.2rem;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.import-help-list li { margin-bottom: 6px; }
+.import-help-list strong { color: var(--ink); }
+.footnote a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.footnote a:hover { text-decoration: underline; }

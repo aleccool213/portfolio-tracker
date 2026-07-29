@@ -1,0 +1,50 @@
+<% content_for :title, "Import portfolio CSV" %>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>Import from CSV <span class="wave">📥</span></h1>
+    <p>Load accounts and monthly balances in one go — handy when you're bringing an existing portfolio over.</p>
+  </header>
+
+  <section class="card import-card">
+    <div class="body">
+      <div class="name">Upload a file</div>
+      <div class="meta">UTF-8 CSV with a header row. Existing accounts (same name + institution) are reused; values for the same month are updated.</div>
+    </div>
+
+    <%= form_with url: import_path, method: :post, multipart: true, class: "import-form" do %>
+      <label class="file-field">
+        <span class="file-label">Choose CSV</span>
+        <%= file_field_tag :file, accept: ".csv,text/csv", required: true %>
+      </label>
+
+      <div class="value-form-actions">
+        <%= submit_tag "Import portfolio", class: "btn btn-primary" %>
+        <%= link_to "Cancel", root_path, class: "btn btn-ghost" %>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="import-help">
+    <h2 class="section-title">Format</h2>
+    <p class="import-help-copy">
+      Columns: <code>name</code>, <code>institution</code>, <code>kind</code>,
+      <code>recorded_on</code>, <code>amount</code>.
+    </p>
+    <ul class="import-help-list">
+      <li><strong>name</strong> — required (e.g. Managed TFSA)</li>
+      <li><strong>institution</strong> — optional (e.g. Wealthsimple)</li>
+      <li><strong>kind</strong> — required for new accounts:
+        <%= Account::KINDS.join(", ") %></li>
+      <li><strong>recorded_on</strong> — date of the snapshot (normalized to the 1st of that month)</li>
+      <li><strong>amount</strong> — dollars; liabilities should be negative</li>
+    </ul>
+    <p class="import-help-copy">
+      Leave <code>recorded_on</code> and <code>amount</code> blank to create an account without a balance
+      (credit cards always work this way).
+    </p>
+    <p>
+      <%= link_to "Download sample CSV →", template_import_path, class: "section-action" %>
+    </p>
+  </section>
+</div>

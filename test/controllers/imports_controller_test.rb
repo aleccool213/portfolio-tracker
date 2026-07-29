@@ -1,0 +1,73 @@
+require "test_helper"
+
+class ImportsControllerTest < ActionDispatch::IntegrationTest
+  test "show import form" do
+    get import_url
+    assert_response :success
+    assert_select "form[action=?]", import_path
+    assert_select "input[type=file][name=file]"
+    assert_select "a[href=?]", template_import_path
+  end
+
+  test "template downloads sample csv" do
+    get template_import_url
+    assert_response :success
+    assert_equal "text/csv", response.media_type
+    assert_match(/name,institution,kind,recorded_on,amount/, response.body)
+  end
+
+  test "create imports csv and redirects to dashboard" do
+    csv = <<~CSV
+      name,institution,kind,recorded_on,amount
+      Controller Import TFSA,Wealthsimple,tfsa,2026-03-01,50000
+    CSV
+
+    file = Tempfile.new([ "portfolio", ".csv" ])
+    file.write(csv)
+    file.rewind
+
+    uploaded = Rack::Test::UploadedFile.new(file.path, "text/csv")
+
+    assert_difference -> { Account.count } => 1, -> { AccountValue.count } => 1 do
+      post import_url, params: { file: uploaded }
+    end
+
+    assert_redirected_to root_path
+    assert_match(/Import complete/, flash[:notice])
+  ensure
+    file.close!
+  end
+
+  test "create without file shows alert" do
+    post import_url, params: {}
+    assert_redirected_to import_path
+    assert_match(/Choose a CSV file/, flash[:alert])
+  end
+
+  test "create with bad csv shows alert and does not persist" do
+    csv = <<~CSV
+      name,institution,kind,recorded_on,amount
+      Bad Kind Account,Bank,not_a_kind,2026-01-01,10
+    CSV
+
+    file = Tempfile.new([ "bad", ".csv" ])
+    file.write(csv)
+    file.rewind
+    uploaded = Rack::Test::UploadedFile.new(file.path, "text/csv")
+
+    assert_no_difference [ "Account.count", "AccountValue.count" ] do
+      post import_url, params: { file: uploaded }
+    end
+
+    assert_redirected_to import_path
+    assert_match(/Import failed/, flash[:alert])
+  ensure
+    file.close!
+  end
+
+  test "dashboard links to import" do
+    get root_url
+    assert_response :success
+    assert_select "a[href=?]", import_path
+  end
+end
