@@ -288,7 +288,7 @@ bin/importmap audit
 - Stack: M4 badges → M5 net worth / reminder → later milestones.
 - Title: "Add net-worth hero and smart monthly reminder (Milestone 5)".
 
-### Milestone 6 — Manage accounts (CRUD)
+### ✅ Milestone 6 — Manage accounts (CRUD) (done)
 **Goal:** add, edit, and delete accounts from the UI.
 - **Resource:** `resources :accounts` (`new/create/edit/update/destroy`;
   `index` can redirect to the dashboard). `kind` is a select of `Account::KINDS`.
@@ -299,6 +299,130 @@ bin/importmap audit
   errors.
 - **Files:** route, `AccountsController`, `new/edit/_form` views, dashboard
   edit/delete affordances, tests.
+
+#### Implementation plan (stacked on M5)
+
+**Branch:** `milestone-6-manage-accounts` → stacks on
+`milestone-5-net-worth-reminder` → `milestone-4-monthly-change-badges` →
+`master`.
+
+**Current baseline (what M6 builds on):**
+- `Account` has `name`, `institution`, `kind` + validations on name/kind.
+- `Account::KINDS` and `kind_label` already exist.
+- `has_many :account_values, dependent: :destroy` — deleting an account
+  removes its snapshots (no orphan cleanup needed).
+- Dashboard lists all accounts as static cards; value-entry is a separate
+  singular resource. No account routes or forms yet.
+- Existing UI patterns to reuse: `.wrap` / `.masthead` / `.card` / `.btn` /
+  `.btn-primary` / `.btn-ghost` / flash, plus the value-entry form layout
+  (`form_with` + action row).
+
+**1. Routes** (`config/routes.rb`)
+
+```ruby
+resources :accounts, only: %i[new create edit update destroy]
+# optional: index → redirect to root if someone hits /accounts
+```
+
+No `show` action — the dashboard is the list. `index` can redirect to `root_path`
+if included, or be omitted entirely.
+
+**2. `AccountsController`**
+
+| Action | Behaviour |
+|---|---|
+| `new` | `@account = Account.new` |
+| `create` | save; success → `root_path` with flash ("Account added 🎉"); failure → re-render `:new` (422) |
+| `edit` | load account |
+| `update` | success → dashboard + flash; failure → re-render `:edit` (422) |
+| `destroy` | destroy; redirect dashboard + flash ("Removed …") |
+
+- Strong params: `params.require(:account).permit(:name, :institution, :kind)`.
+- `before_action :set_account` for edit/update/destroy.
+- No auth (app is still single-household / self-hosted).
+
+**3. Views**
+
+| File | Purpose |
+|---|---|
+| `app/views/accounts/new.html.erb` | masthead "Add an account" + form |
+| `app/views/accounts/edit.html.erb` | masthead "Edit …" + form |
+| `app/views/accounts/_form.html.erb` | shared form: name, institution, kind select |
+
+Form details:
+- `form_with model: @account`.
+- Kind: `select` of `Account::KINDS`, labels via `kind_label`-style humanization
+  (helper or map in the form). Prefer `options_for_select` with
+  `Account::KINDS.map { |k| [label, k] }`.
+- Surface errors: simple list at top of form when `@account.errors.any?`
+  (match warm card tone, no new dependency).
+- Actions: primary submit + ghost "Cancel" → `root_path`.
+- Keep one column, mobile-first; reuse `.btn` styles. Add minimal field CSS
+  (label + full-width input) if nothing fits yet — plain inputs are fine,
+  don't invent a design system.
+
+**4. Dashboard affordances** (`app/views/dashboard/index.html.erb`)
+
+- Section header row: "Your accounts" + **"Add account"** link
+  (`new_account_path`, accent/link style — e.g. next to `.section-title` or
+  as a small `.btn` under the hero).
+- On each card: modest edit + delete controls so they don't steal focus from
+  amount/badge:
+  - Edit: `link_to "Edit", edit_account_path(account)` (text or small ghost).
+  - Delete: `button_to` / `link_to` with `method: :delete`,
+    `data: { turbo_confirm: "Remove #{account.name}? Its value history goes too." }`.
+- Empty state: update copy to point at **Add account** once CRUD exists.
+- Card layout: keep amount/badge primary; put actions under meta or as a small
+  `.card-actions` row so mobile stays readable.
+
+**5. CSS** (`application.css`)
+
+- `.section-title-row` (title + add link flex).
+- `.card-actions` (small gap, muted links).
+- Simple form styles: `.form-field`, label, input/select (border, cream focus,
+  radius) — only what's needed for new/edit to not look broken.
+- Reuse existing buttons; optional `.btn-danger` for delete is nice-to-have,
+  not required (confirm dialog is the safety net).
+
+**6. Tests** (`test/controllers/accounts_controller_test.rb`)
+
+| Case | Assert |
+|---|---|
+| `GET new` | success, form present |
+| `POST create` valid | +1 Account, redirect root, flash |
+| `POST create` invalid (blank name) | no create, re-render new, errors shown |
+| `GET edit` | success |
+| `PATCH update` valid | name/kind changed, redirect root |
+| `DELETE destroy` | −1 Account, values gone (`dependent: :destroy`), redirect root |
+| Dashboard | "Add account" link; edit link on a fixture card |
+
+Optional: integration assert that destroying managed_tfsa removes its
+`account_values` count.
+
+**7. Out of scope**
+
+- Mortgage-only fields (M7), credit-card perks fields/page (M8).
+- No schema migration — form only uses existing columns.
+- No seeds changes required (CRUD is for user-driven data; seeds still fill
+  Render previews).
+- No Stimulus beyond Turbo confirm (already available via Hotwire).
+- No account `show` page or nested value history UI.
+
+**8. Verification**
+
+```bash
+bin/rails test
+bin/rubocop
+bin/brakeman --no-pager
+bin/bundler-audit
+bin/importmap audit
+```
+
+**9. Suggested PR shape**
+
+- Implement on this branch after the plan commit (`gt modify -c` or amend).
+- Stack: M4 → M5 → **M6 manage accounts** → M7+.
+- Title: "Add account CRUD from the dashboard (Milestone 6)".
 
 ### Milestone 7 — Mortgage / liability details
 **Goal:** capture the numbers a mortgage decision needs.
