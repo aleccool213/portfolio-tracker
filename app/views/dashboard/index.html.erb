@@ -120,7 +120,9 @@
   <%= render "suggestions", suggestions: @suggestions %>
 
   <p class="footnote">
-    Bringing numbers over from a spreadsheet?
-    <%= link_to "Import a CSV →", import_path %>
+    Spreadsheet backup:
+    <%= link_to "Import CSV", import_path %>
+    ·
+    <%= link_to "Export CSV", export_import_path %>
   </p>
 </div>

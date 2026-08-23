@@ -1,10 +1,20 @@
-<% content_for :title, "Import portfolio CSV" %>
+<% content_for :title, "Import and export CSV" %>
 
 <div class="wrap">
   <header class="masthead">
-    <h1>Import from CSV <span class="wave">📥</span></h1>
-    <p>Load accounts and monthly balances in one go — handy when you're bringing an existing portfolio over.</p>
+    <h1>CSV import &amp; export <span class="wave">📥</span></h1>
+    <p>Bring an existing portfolio in, or download what you have — same columns either way.</p>
   </header>
+
+  <section class="card import-card">
+    <div class="body">
+      <div class="name">Download current portfolio</div>
+      <div class="meta">One row per monthly value (credit cards get a single blank-value row). Re-importable on a fresh Render preview.</div>
+    </div>
+    <div class="value-form-actions">
+      <%= link_to "Export CSV", export_import_path, class: "btn btn-primary" %>
+    </div>
+  </section>
 
   <section class="card import-card">
     <div class="body">

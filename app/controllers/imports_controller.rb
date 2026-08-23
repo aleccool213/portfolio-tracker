@@ -25,4 +25,11 @@ class ImportsController < ApplicationController
               type: "text/csv",
               disposition: "attachment"
   end
+
+  def export
+    send_data PortfolioCsvExport.call,
+              filename: "portfolio-#{Date.current.iso8601}.csv",
+              type: "text/csv",
+              disposition: "attachment"
+  end
 end

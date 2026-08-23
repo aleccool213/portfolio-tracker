@@ -479,9 +479,10 @@ bin/importmap audit
 - **Tests:** suggestions exclude kinds the user already holds.
 - **Files:** a constant/PORO, a view partial, tests.
 
-### Milestone 12 — CSV portfolio importer
-**Goal:** mass-import an existing household portfolio from a spreadsheet so the
-dashboard shows real numbers without typing every account/month by hand.
+### Milestone 12 — CSV portfolio importer & exporter
+**Goal:** mass-import an existing household portfolio from a spreadsheet, and
+export the current accounts + values in the same format so a preview or Pi
+can be restored without typing every account/month by hand.
 
 **Branch:** `milestone-12-csv-import` → stacks on `milestone-5-net-worth-reminder`
 (parallel to the later feature stack; ships as soon as M5 is in).
@@ -494,14 +495,16 @@ dashboard shows real numbers without typing every account/month by hand.
   - Allow `$` / commas in amounts; liabilities negative.
   - Credit cards: account-only rows (no balances).
   - Invalid rows fail the whole import with a clear line-numbered message.
-- **UI:** `/import` — file upload, short format help, downloadable sample CSV.
-  Link from the dashboard footnote.
+- **UI:** `/import` — export current portfolio, file upload, format help,
+  downloadable sample CSV. Import + export links from the dashboard footnote.
 - **PORO `PortfolioCsvImport`:** parse + transaction + result summary
   (accounts created/matched, values saved, errors).
+- **PORO `PortfolioCsvExport`:** dump accounts + chronological values using
+  the same headers (credit cards: one blank-value row).
 - **Tests:** happy path (create accounts + values), upsert on re-import, reject
   bad kind/date/amount, reject credit-card balances, missing columns, template
-  download.
-- **Files:** model PORO, controller, view, routes, CSS, dashboard link, tests.
+  download, export includes fixture rows and round-trips through import.
+- **Files:** model POROs, controller, view, routes, CSS, dashboard link, tests.
 - **Out of scope:** brokerage statement parsers, FX conversion, MCP server
   (deferred indefinitely).
 

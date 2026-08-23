@@ -65,9 +65,25 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     file.close!
   end
 
-  test "dashboard links to import" do
+  test "dashboard links to import and export" do
     get root_url
     assert_response :success
     assert_select "a[href=?]", import_path
+    assert_select "a[href=?]", export_import_path
+  end
+
+  test "export downloads current portfolio csv" do
+    get export_import_url
+    assert_response :success
+    assert_equal "text/csv", response.media_type
+    assert_match(/portfolio-#{Date.current.iso8601}\.csv/, response.headers["Content-Disposition"])
+    assert_match(/Managed TFSA/, response.body)
+    assert_match(/Home mortgage/, response.body)
+  end
+
+  test "show includes export link" do
+    get import_url
+    assert_response :success
+    assert_select "a[href=?]", export_import_path, text: "Export CSV"
   end
 end
