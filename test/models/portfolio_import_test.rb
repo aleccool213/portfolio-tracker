@@ -1,7 +1,29 @@
 require "test_helper"
 require "stringio"
 
-class PortfolioCsvImportTest < ActiveSupport::TestCase
+class PortfolioImportTest < ActiveSupport::TestCase
+  def import_csv(str)
+    decoded = PortfolioFormats::Csv.parse(StringIO.new(str))
+    return PortfolioImport::Result.new(
+      accounts_created: 0, accounts_updated: 0, values_upserted: 0, errors: decoded.errors
+    ) if decoded.errors.any?
+
+    PortfolioImport.new(decoded.rows).call
+  end
+
+  test "imports from typed rows without a file format" do
+    rows = [
+      PortfolioRow.new(name: "Row TFSA", institution: "Bank", kind: "tfsa",
+                       recorded_on: Date.new(2026, 1, 1), amount: 1_000)
+    ]
+
+    result = PortfolioImport.new(rows).call
+
+    assert result.success?, result.errors.inspect
+    assert_equal 1, result.accounts_created
+    assert Account.exists?(name: "Row TFSA", kind: "tfsa")
+  end
+
   test "imports new accounts and monthly values" do
     csv = <<~CSV
       name,institution,kind,recorded_on,amount,interest_rate,term_months,original_principal
@@ -10,7 +32,7 @@ class PortfolioCsvImportTest < ActiveSupport::TestCase
       Import mortgage,Import Bank,liability,2026-01-01,-318000,4.89,60,450000
     CSV
 
-    result = PortfolioCsvImport.new(StringIO.new(csv)).call
+    result = import_csv(csv)
 
     assert result.success?, result.errors.inspect
     assert_equal 2, result.accounts_created
@@ -34,7 +56,7 @@ class PortfolioCsvImportTest < ActiveSupport::TestCase
       Import RRSP,WS,rrsp,2026-02-01,12000
     CSV
 
-    result = PortfolioCsvImport.new(StringIO.new(csv)).call
+    result = import_csv(csv)
 
     assert result.success?, result.errors.inspect
     assert_equal 0, result.accounts_created
@@ -50,7 +72,7 @@ class PortfolioCsvImportTest < ActiveSupport::TestCase
       Import Visa,TD,credit_card,,
     CSV
 
-    result = PortfolioCsvImport.new(StringIO.new(csv)).call
+    result = import_csv(csv)
 
     assert result.success?, result.errors.inspect
     assert_equal 1, result.accounts_created
@@ -64,7 +86,7 @@ class PortfolioCsvImportTest < ActiveSupport::TestCase
       Import Visa Bad,TD,credit_card,2026-01-01,500
     CSV
 
-    result = PortfolioCsvImport.new(StringIO.new(csv)).call
+    result = import_csv(csv)
 
     assert_not result.success?
     assert_match(/credit cards do not track balances/, result.errors.first)
@@ -77,7 +99,7 @@ class PortfolioCsvImportTest < ActiveSupport::TestCase
       Mystery,Bank,hedge_fund,2026-01-01,1
     CSV
 
-    result = PortfolioCsvImport.new(StringIO.new(csv)).call
+    result = import_csv(csv)
 
     assert_not result.success?
     assert_match(/kind must be one of/, result.errors.first)
@@ -89,7 +111,7 @@ class PortfolioCsvImportTest < ActiveSupport::TestCase
       Import Cash,Bank,cash,2026-01-01,not-a-number
     CSV
 
-    result = PortfolioCsvImport.new(StringIO.new(csv)).call
+    result = import_csv(csv)
 
     assert_not result.success?
     assert_match(/amount is not a number/, result.errors.first)
@@ -101,7 +123,7 @@ class PortfolioCsvImportTest < ActiveSupport::TestCase
       Import Formatted,Bank,cash,2026-01-01,"$1,234.56"
     CSV
 
-    result = PortfolioCsvImport.new(StringIO.new(csv)).call
+    result = import_csv(csv)
 
     assert result.success?, result.errors.inspect
     account = Account.find_by!(name: "Import Formatted")
@@ -114,14 +136,9 @@ class PortfolioCsvImportTest < ActiveSupport::TestCase
       a,b
     CSV
 
-    result = PortfolioCsvImport.new(StringIO.new(csv)).call
+    result = import_csv(csv)
 
     assert_not result.success?
     assert_match(/Missing required column/, result.errors.first)
-  end
-
-  test "template includes expected headers" do
-    headers = CSV.parse(PortfolioCsvImport.template_csv, headers: true).headers
-    assert_equal PortfolioCsvImport::HEADERS, headers
   end
 end

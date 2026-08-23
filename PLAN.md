@@ -497,14 +497,17 @@ can be restored without typing every account/month by hand.
   - Invalid rows fail the whole import with a clear line-numbered message.
 - **UI:** `/import` — export current portfolio, file upload, format help,
   downloadable sample CSV. Import + export links from the dashboard footnote.
-- **PORO `PortfolioCsvImport`:** parse + transaction + result summary
-  (accounts created/matched, values saved, errors).
-- **PORO `PortfolioCsvExport`:** dump accounts + chronological values using
-  the same headers (credit cards: one blank-value row).
+- **Transfer layer (format-agnostic):** `PortfolioRow`, `PortfolioImport`
+  (transaction + result summary), `PortfolioExport` (accounts → rows).
+- **Format codec:** `PortfolioFormats::Csv` encodes/decodes rows. The
+  controller holds `CODEC = PortfolioFormats::Csv` — swap that (or pick by
+  filename) to add JSON later without touching import/export.
 - **Tests:** happy path (create accounts + values), upsert on re-import, reject
   bad kind/date/amount, reject credit-card balances, missing columns, template
-  download, export includes fixture rows and round-trips through import.
-- **Files:** model POROs, controller, view, routes, CSS, dashboard link, tests.
+  download, export includes fixture rows and round-trips through import,
+  domain import from typed rows (no CSV).
+- **Files:** transfer POROs, CSV codec, controller, view, routes, CSS,
+  dashboard link, tests.
 - **Out of scope:** brokerage statement parsers, FX conversion, MCP server
   (deferred indefinitely).
 

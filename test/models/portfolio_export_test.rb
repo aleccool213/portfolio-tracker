@@ -1,12 +1,16 @@
 require "test_helper"
 require "stringio"
 
-class PortfolioCsvExportTest < ActiveSupport::TestCase
+class PortfolioExportTest < ActiveSupport::TestCase
+  def export_csv(accounts)
+    PortfolioFormats::Csv.generate(PortfolioExport.rows(accounts))
+  end
+
   test "exports a valued account as one row per snapshot" do
-    csv = PortfolioCsvExport.call([ accounts(:managed_tfsa) ])
+    csv = export_csv([ accounts(:managed_tfsa) ])
     rows = CSV.parse(csv, headers: true)
 
-    assert_equal PortfolioCsvImport::HEADERS, rows.headers
+    assert_equal PortfolioFormats::Csv::HEADERS, rows.headers
     assert_equal 2, rows.size
     assert_equal [ "2026-05-01", "2026-06-01" ], rows.map { |r| r["recorded_on"] }
     assert_equal "Managed TFSA", rows.first["name"]
@@ -15,7 +19,7 @@ class PortfolioCsvExportTest < ActiveSupport::TestCase
   end
 
   test "exports a liability with rate term and principal" do
-    csv = PortfolioCsvExport.call([ accounts(:mortgage) ])
+    csv = export_csv([ accounts(:mortgage) ])
     row = CSV.parse(csv, headers: true).first
 
     assert_equal "Home mortgage", row["name"]
@@ -28,7 +32,7 @@ class PortfolioCsvExportTest < ActiveSupport::TestCase
   end
 
   test "exports a credit card as a single blank-value row" do
-    csv = PortfolioCsvExport.call([ accounts(:aeroplan) ])
+    csv = export_csv([ accounts(:aeroplan) ])
     rows = CSV.parse(csv, headers: true)
 
     assert_equal 1, rows.size
@@ -37,12 +41,12 @@ class PortfolioCsvExportTest < ActiveSupport::TestCase
     assert_nil rows.first["amount"]
   end
 
-  test "exported csv reimports onto a fresh account" do
-    exported = PortfolioCsvExport.call([ accounts(:managed_tfsa) ])
+  test "exported rows reimport onto a fresh account" do
+    rows = PortfolioExport.rows([ accounts(:managed_tfsa) ])
     accounts(:managed_tfsa).account_values.destroy_all
     accounts(:managed_tfsa).destroy
 
-    result = PortfolioCsvImport.new(StringIO.new(exported)).call
+    result = PortfolioImport.new(rows).call
 
     assert result.success?, result.errors.inspect
     restored = Account.find_by!(name: "Managed TFSA", institution: "Wealthsimple")

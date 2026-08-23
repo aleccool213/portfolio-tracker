@@ -1,4 +1,8 @@
 class ImportsController < ApplicationController
+  # File codec for upload/download. Swap (or pick by filename) to add JSON
+  # without changing PortfolioImport / PortfolioExport.
+  CODEC = PortfolioFormats::Csv
+
   def show
   end
 
@@ -10,7 +14,14 @@ class ImportsController < ApplicationController
       return
     end
 
-    result = PortfolioCsvImport.new(file).call
+    decoded = CODEC.parse(file)
+    result = if decoded.errors.any?
+      PortfolioImport::Result.new(
+        accounts_created: 0, accounts_updated: 0, values_upserted: 0, errors: decoded.errors
+      )
+    else
+      PortfolioImport.new(decoded.rows).call
+    end
 
     if result.success?
       redirect_to root_path, notice: "Import complete — #{result.summary} 🎉"
@@ -20,16 +31,16 @@ class ImportsController < ApplicationController
   end
 
   def template
-    send_data PortfolioCsvImport.template_csv,
-              filename: "portfolio-import-template.csv",
-              type: "text/csv",
+    send_data CODEC.template,
+              filename: "portfolio-import-template.#{CODEC.extension}",
+              type: CODEC.content_type,
               disposition: "attachment"
   end
 
   def export
-    send_data PortfolioCsvExport.call,
-              filename: "portfolio-#{Date.current.iso8601}.csv",
-              type: "text/csv",
+    send_data CODEC.generate(PortfolioExport.rows),
+              filename: "portfolio-#{Date.current.iso8601}.#{CODEC.extension}",
+              type: CODEC.content_type,
               disposition: "attachment"
   end
 end
