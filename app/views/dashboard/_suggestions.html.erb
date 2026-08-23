@@ -1,0 +1,22 @@
+<% if suggestions.any? %>
+  <section class="suggestions">
+    <h2 class="section-title">Ideas for Canada</h2>
+    <p class="section-note">
+      Registered accounts you don’t have yet. Room notes are hard-coded for 2026 and
+      <strong>not tax advice</strong> — double-check with CRA or a professional.
+    </p>
+
+    <div class="cards">
+      <% suggestions.each do |suggestion| %>
+        <article class="card card-suggestion">
+          <div class="dot"><%= kind_emoji(suggestion.kind) %></div>
+          <div class="body">
+            <div class="name"><%= suggestion.label %></div>
+            <div class="meta"><%= suggestion.who_for %></div>
+            <p class="room-note"><%= suggestion.room_note %></p>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  </section>
+<% end %>

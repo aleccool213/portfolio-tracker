@@ -6,13 +6,14 @@
 # This is fictional sample data shaped like a typical Canadian Wealthsimple
 # setup, so the dashboard has something to show before the real value-tracking
 # features land in later PRs.
+#
+# We deliberately skip FHSA and RESP so "Ideas for Canada" has suggestions
+# on a fresh Render preview (the household already has a mortgage / home).
 
 sample_accounts = [
   { name: "Managed TFSA",        institution: "Wealthsimple", kind: "tfsa" },
   { name: "Self-directed TFSA",  institution: "Wealthsimple", kind: "tfsa" },
   { name: "RRSP",                institution: "Wealthsimple", kind: "rrsp" },
-  { name: "Family RESP",         institution: "Wealthsimple", kind: "resp" },
-  { name: "FHSA",                institution: "Wealthsimple", kind: "fhsa" },
   { name: "Crypto",              institution: "Wealthsimple", kind: "crypto" },
   { name: "Everyday chequing",   institution: "Wealthsimple", kind: "cash" },
   { name: "Home mortgage",       institution: "RBC",          kind: "liability",
@@ -73,8 +74,6 @@ STARTING_AMOUNTS = {
   "Managed TFSA" => 42_000,
   "Self-directed TFSA" => 18_500,
   "RRSP" => 61_000,
-  "Family RESP" => 12_300,
-  "FHSA" => 8_000,
   "Crypto" => 3_400,
   "Everyday chequing" => 4_200,
   "Home mortgage" => -318_000
