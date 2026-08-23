@@ -1,28 +1,12 @@
-# Domain products instead of a god `Account`
+# Post-merge architecture: domain products
 
-A design for concentrating household-finance behaviour in typed product classes, so mortgages, credit cards, and valued investments stop leaking `kind ==` checks into controllers and calc POROs.
+Wait until **PR #22 (CSV import) is on `master`**, then do **one architecture PR**. Do not sneak this into #22, and do not split tables yet.
 
-This is a **follow-on architecture**, not a rewrite of the open stack. Land remaining feature PRs (and restack CSV) first; then add a dedicated domain-types PR on top. Do **not** implement wrappers, schema, or controller refactors in the same change as landing this note.
-
----
-
-## Open PR stack (when this was written)
-
-```
-master (M7 mortgage details, merged)
-  └─ #13 M8 credit-card perks
-       └─ #14 M9 sparklines
-            └─ #15 M10 allocation + nudges
-                 └─ #16 M11 Canadian suggestions
-
-#22 M12 CSV import  — parallel, currently based on older master
-```
-
-The tip of the feature stack is the right picture of the domain: one `accounts` table, a `kind` string that mixes tax wrappers with product types, and behaviour scattered across `Account`, `Portfolio`, `Allocation`, `AccountSuggestion`, `ValueEntriesController`, `DashboardController`, `PortfolioCsvImport`, and the dashboard/form views.
+M8–M11 are already merged. After CSV lands, every real caller of `Account.kind` exists: dashboard, value entry, CRUD form, allocation, suggestions, and import. That is the moment a wrapper hierarchy pays off — one PR can make all of them kind-blind, and later mortgage-vs-invest / MCP work has a class to live in.
 
 ---
 
-## Diagnosis
+## Why this, not STI / extra tables / more services
 
 `Account.kind` is doing two unrelated jobs:
 
@@ -31,55 +15,45 @@ The tip of the feature stack is the right picture of the domain: one `accounts` 
 | **Product type** | `liability`, `credit_card`, (implicit) everything else | What *kind of thing* the household holds |
 | **Tax sleeve / wrapper** | `tfsa`, `rrsp`, `resp`, `fhsa`, `non_registered`, `crypto`, `cash` | How a *valued asset* is parked |
 
-Because those axes share one field, every new rule becomes `if account.kind == ...` at the call site:
+Call sites after the feature stack (plus CSV):
 
 - `Portfolio` excludes credit cards, then special-cases liabilities as `-amount.abs`
-- `Allocation` excludes credit cards *and* liabilities, then groups remaining rows by `kind`
+- `Allocation` excludes credit cards *and* liabilities
 - `ValueEntriesController` repeats `where.not(kind: "credit_card")`
 - `DashboardController` splits `@cards` / `@value_accounts` by `credit_card?`
-- `PortfolioCsvImport` refuses balances when `kind == "credit_card"`
-- `Account` validations are `if: :mortgage?`, and `mortgage?` is just `kind == "liability"`
-- The account form always shows mortgage fields *and* (on the stack) credit-card fields
-- Seeds store mortgage snapshots negative; `Portfolio` also abs-then-negates — two places own the sign convention
+- `PortfolioCsvImport` refuses balances on credit cards and requires mortgage columns for new liabilities
+- `Account` validations are `if: :mortgage?`, and `mortgage?` is `kind == "liability"`
+- The account form always shows mortgage fields *and* credit-card fields
+- Seeds store mortgage snapshots negative; `Portfolio` also abs-then-negates
 
-`Portfolio` / `Allocation` are already the right shape (small POROs). The missing seam is **the product**, not another calculator.
+`Portfolio` / `Allocation` / `PortfolioCsvImport` are already the right shape (small POROs). The missing seam is **the product**.
 
-A terminology clash to settle: credit cards are easy to think of as “variants of a liability.” In this app they are **not**. `PLAN.md` and M8 treat them as perk records with **no balance and no net-worth effect**. Mortgages *are* liabilities (valued, they reduce net worth). Keep that split; otherwise every net-worth and value-entry rule gets a special case.
+Credit cards are **not** liabilities in this app. They are perk records with no balance and no net-worth effect. Mortgages *are* liabilities. Keep that split.
 
 ---
 
 ## Domain language
 
-Use these terms going forward (candidate `CONTEXT.md` entries, no implementation):
+**Product** — something the household holds. Identity is name + institution.
+_Avoid_: using “account” for cards and mortgages in new code (`Account` stays the AR table).
 
-**Product**:
-Something the household holds and the dashboard can show. Identity is name + institution.
-_Avoid_: Account as the universal noun for cards and mortgages (keep `Account` as the ActiveRecord table for now).
+**Valued product** — has monthly `AccountValue` snapshots. Assets and liabilities are valued; credit cards are not.
 
-**Valued product**:
-A product with monthly `AccountValue` snapshots. Assets and liabilities are valued; credit cards are not.
+**Asset** — valued product that increases net worth. Its `kind` is a tax sleeve / asset class, not a product type.
 
-**Asset**:
-A valued product that *increases* net worth (TFSA, RRSP, cash, crypto, non-registered). Its `kind` is a tax sleeve / asset class, not a product type.
+**Liability** — valued product that decreases net worth. Sign lives here: always `-amount.abs`.
 
-**Liability**:
-A valued product that *decreases* net worth. Sign is owned here: contribution is always `-amount.abs`.
+**Mortgage** — a liability with rate, term, original principal. Do not keep `kind == "liability"` forever aliased to “is a mortgage.”
 
-**Mortgage**:
-A liability with rate, term, and original principal. The current app has only this subtype; `kind == "liability"` should not stay forever aliased to “is a mortgage.”
+**Credit card** — perks, annual fee, renewal. Not valued, not in net worth, allocation, or monthly check-in.
 
-**Credit card**:
-A product that stores perks, annual fee, and renewal. Not valued, not in net worth, not in allocation, not in monthly check-in.
-_Avoid_: calling it a liability in this codebase.
-
-**Trackable**:
-“Gets a row on the value-entry page / counts for `needs_check_in?`.” Equivalent to *valued product*.
+**Trackable** — appears on value entry and counts for `needs_check_in?`. Same as valued product.
 
 ---
 
-## Recommended approach: wrap the row, don’t STI it yet
+## The refactor (one PR on `master` after #22)
 
-Keep the `accounts` table and ActiveRecord `Account` as **persistence**. Introduce a small product hierarchy that **wraps** an `Account` and owns behaviour.
+Keep the `accounts` table. Wrap each row in a product object that owns behaviour. No STI, no delegated types, no `app/domain/`, no repositories.
 
 ```
 Account (AR: name, institution, kind, extra columns, has_many values)
@@ -92,10 +66,10 @@ Products.wrap(account)
     └── Products::CreditCard   # perks only
 ```
 
-Rails already puts calc POROs in `app/models/` (`Portfolio`, `Allocation`, `MonthlyChange`). Keep the new types there so Zeitwerk stays boring:
+Files (Zeitwerk, next to existing POROs):
 
 ```
-app/models/products.rb              # wrap() factory
+app/models/products.rb
 app/models/products/base.rb
 app/models/products/asset.rb
 app/models/products/liability.rb
@@ -103,12 +77,10 @@ app/models/products/mortgage.rb
 app/models/products/credit_card.rb
 ```
 
-### The interface (small, on purpose)
-
-Every product answers the same questions. Callers should not know `kind`.
+### Interface (the only thing callers learn)
 
 ```ruby
-# identity (delegated to the record)
+# identity (delegated)
 id, name, institution, to_param, kind_label
 
 # roles
@@ -119,12 +91,13 @@ net_worth_contribution      # 0 / +amount / -amount.abs
 # valued products
 current_amount              # nil for cards
 amount_on(date)
+record_amount(month, amount)  # shared by value entry + CSV
 
 # persistence escape hatch (narrow)
-record                      # the Account row, for forms/IDs
+record
 ```
 
-Factory — **the only `case kind` in the app**:
+Factory — **the only `case kind` left in `app/`**:
 
 ```ruby
 module Products
@@ -140,20 +113,20 @@ module Products
 end
 ```
 
-That is the seam. One adapter today (the AR row). Do **not** introduce repositories, ports, or `app/domain/`.
+### Rewire every merged caller
 
-### What moves behind the interface
-
-| Today (scattered) | After (local) |
+| Caller | After |
 |---|---|
-| `kind != "credit_card"` in Portfolio, ValueEntries, CSV, Dashboard | `product.trackable?` |
-| `kind == "liability" ? -amount.abs : amount` in Portfolio | `product.net_worth_contribution` |
-| `kind == "credit_card" \|\| kind == "liability"` in Allocation | `product.asset?` |
-| `mortgage?` validations on `Account` | `Products::Mortgage` validations (via AR `validates if:` that delegate, or a custom validator the Mortgage class owns) |
-| Liability columns on the shared form | Mortgage form partial; CreditCard form partial |
-| `DashboardController` splits collections | `products.partition(&:trackable?)` / `select { not trackable? }` |
+| `Portfolio` | `products.sum(&:net_worth_contribution)`; `needs_check_in?` over `trackable?` |
+| `Allocation` | `products.select(&:asset?)`; slices still group by sleeve (`kind`) |
+| `AccountSuggestion` | look at **asset** sleeves only, ignore cards/liabilities |
+| `DashboardController` | wrap once; `partition(&:trackable?)` for the two card lists |
+| `ValueEntriesController` | trackable products; `product.record_amount(...)` |
+| `PortfolioCsvImport` | `next unless product.trackable?` for value rows; mortgage attrs applied on `Products::Mortgage` |
+| Dashboard view | ask the product for rate line / fee line / sparkline eligibility instead of `account.mortgage?` |
+| Account form | identity fields + kind, then a partial per product type (`_asset_fields`, `_mortgage_fields`, `_credit_card_fields`). Stimulus on `kind` to show the matching group is enough — already on import maps |
 
-`Portfolio` becomes deep and kind-blind:
+`Portfolio` after:
 
 ```ruby
 def net_worth
@@ -166,119 +139,49 @@ def needs_check_in?
 end
 ```
 
-Adding “should I pay down this mortgage faster?” later is a method on `Products::Mortgage`, not another `if account.kind` in the dashboard. Adding a HELOC is `Products::Heloc < Liability` and one line in `wrap` — `Portfolio` does not change.
+`Account` shrinks toward persistence (associations, presence/inclusion, maybe `latest_value`). Drop `mortgage?` / `credit_card?` as the public API.
 
-### Persistence: stay on one table for this step
+### Tests
 
-Do **not** split tables or enable STI in the first domain PR. M8 already added nullable credit-card columns on `accounts`; M7 did the same for mortgages. A schema split while those PRs are open is churn for no behaviour.
+- New `test/models/products/*_test.rb` for roles and sign convention
+- `Portfolio` / `Allocation` tests stop asserting on `kind ==`; they use fixtures of each product type
+- Value entry + CSV still cover “cards never get a balance”
+- Success check: `rg 'kind ==' app/` is only `Products.wrap` (seeds may still set `kind:`)
 
-Keep `Account::KINDS` as the persisted discriminator until the wrappers are the only consumers. Then a later PR can rename:
+### Out of this PR
 
-- `kind` on assets → remains `kind` (sleeve)
-- `kind: liability | credit_card` → `product_type` (or STI `type`) if you outgrow the factory
+- Schema split / delegated types / STI
+- HELOC, mortgage-vs-invest, MCP
+- Renaming the `accounts` table
 
----
-
-## Alternatives (and why not first)
-
-### 1. Rails STI (`Asset < Account`, `Mortgage < Account`, `CreditCard < Account`)
-
-Works, and Rails will auto-instantiate subclasses. Rejected as the *first* move because:
-
-- The table is already a wide nullable row; STI does not fix that
-- Asset “subtypes” (TFSA vs cash) should **not** be subclasses — they share behaviour and differ by sleeve
-- You would still need a factory-like `wrap` for things that are not rows (CSV, seeds)
-- STI `type` plus existing `kind` is two discriminators
-
-Reconsider STI only if you want `Account.find` to return the subclass with no factory. That is convenience, not depth.
-
-### 2. Delegated types / extra detail tables
-
-```
-accounts (id, name, institution, product_type, product_id)
-mortgage_details (interest_rate, term_months, original_principal)
-credit_card_details (annual_fee, perks, renewal_on)
-```
-
-This is the right schema **once** variant columns keep growing (amortization, offset, insurance; card family, first-year-fee-waived). It is the wrong next PR: it restacks M8, the form, seeds, and fixtures for a household app with three extra columns.
-
-### 3. Fully separate AR models (`Mortgage`, `CreditCard`, `Investment`)
-
-Most honest to the domain, worst for the current UI (one CRUD resource, one CSV, one dashboard list). `Portfolio` would compose three queries. Do this only if products stop sharing even identity fields.
-
-### 4. Concerns on `Account` (`Trackable`, `Mortgageable`)
-
-Looks tidy, still one god object. Every caller still talks to `Account` and the next feature still opens that file. Concerns do not create a seam.
-
-### 5. Service objects per use case (`ComputeNetWorth`, `CheckInReminder`)
-
-You already have the right aggregators (`Portfolio`, `Allocation`). More services would **strip** behaviour out of products and leave anemic rows. Don’t.
+Those wait until a second product subtype or a third detail column forces them.
 
 ---
 
-## How the existing objects change
+## Later, only if needed
 
-**`Account` (AR)** — shrink toward persistence: associations, presence/inclusion, `latest_value` / `current_amount` (or those move onto valued products). Drop `mortgage?` as a public API; keep a private discriminator for `Products.wrap` if needed.
+**Delegated types** (`mortgage_details`, `credit_card_details`) when variant columns keep growing (amortization, offset; card family, first-year-fee-waived). Wrong as the first move — M7/M8 already put nullable columns on `accounts`.
 
-**`Portfolio`** — takes products (or wraps on init). Knows household totals, not kinds.
+**STI** if you want `Account.find` to return a subclass with no factory. Convenience, not depth. Do not STI TFSA vs cash; those are sleeves on `Asset`.
 
-**`Allocation`** — `products.select(&:asset?)`. Slices still group assets by sleeve (`kind`).
+**Separate AR models** only if products stop sharing identity fields. Worst fit for one dashboard, one CSV, one CRUD resource.
 
-**`AccountSuggestion`** — stays a catalog over **sleeves the household does not hold**. It should ask assets for `kind`, not iterate credit cards.
+**Concerns on `Account`** (`Trackable`, `Mortgageable`) look tidy and still leave a god object. Skip.
 
-**`MonthlyChange`** — stays a pure function of two amounts. Products can expose `monthly_change` as a convenience.
-
-**`ValueEntriesController`** — `Products.wrap_all(Account.all).select(&:trackable?)`. Upsert logic can later move to `ValuedProduct#record_amount(month, amount)` so CSV and the form share it.
-
-**`AccountsController`** — still finds `Account` rows. Strong params stay wide for one form in the first PR; split params/partials in the forms PR.
-
-**`PortfolioCsvImport`** — after wrap: `next unless product.trackable?` instead of a credit-card string check. Creating rows still goes through `Account.create!`.
-
-**Views** — dashboard cards: `if product.is_a?(Products::Mortgage)` or, better, `render product.card_partial`. Prefer asking the product for display bits (`rate_line`, `annual_fee_line`) over type checks in ERB.
+**More service objects** (`ComputeNetWorth`) would strip behaviour out of products. `Portfolio` already is the household aggregator.
 
 ---
 
-## Phased PRs (after the current stack)
+## Constraints
 
-Do not sneak this into remaining feature milestones. Those PRs should stay on-milestone.
-
-### PR D1 — Product wrappers, no schema change
-
-- Add `Products::*` + `wrap`
-- Point `Portfolio`, `Allocation`, dashboard split, value-entry scope, and (after restack) CSV at the interface
-- Move kind-specific tests onto product tests; Portfolio tests assert “cards don’t affect net worth” via a wrapped credit-card fixture, not `kind ==`
-- `bin/rails test` + the four CI checks
-
-Success test: `rg 'kind ==' app/` is only `Products.wrap` (and maybe seeds).
-
-### PR D2 — Forms follow types
-
-- Separate partials: asset / mortgage / credit card
-- Kind select first (or “what are you adding?”), then the matching fields
-- Validations conceptually owned by the product class (still AR-backed)
-
-### PR D3 — Optional schema, only if columns keep growing
-
-- Delegated type or `has_one :mortgage_detail` / `credit_card_detail`
-- `kind` on assets remains the sleeve
-- `mortgage?` no longer means `kind == "liability"` — a future HELOC can share `Liability` without fake mortgage validations
-
-### Docs
-
-- Short `CONTEXT.md` glossary (terms above)
-- Skip an ADR unless you later choose delegated types or split tables (that decision is hard to reverse; wrappers are not)
-
----
-
-## Constraints to keep
-
-- Stay in Rails: POROs in `app/models`, no JS build, no new gem for a “domain framework”
-- No repositories / dry-rb entities / full hexagonal layout — this app is SQLite + Hotwire on a Pi
-- Render seeds stay idempotent; if D3 splits tables, extend `db/seeds.rb`
-- Don’t block or rewrite the open stack to do this
+- POROs in `app/models`, Hotwire / import maps only, no new gems
+- Render seeds stay idempotent
+- `bin/rails test` plus rubocop / brakeman / bundler-audit / importmap audit
 
 ---
 
 ## Suggested next step
 
-Merge/restack remaining feature PRs as planned. Then implement **PR D1 only**: wrappers + make `Portfolio` / `Allocation` / value entry / dashboard kind-blind. That is the leverage: every later mortgage-vs-invest or card-renewal feature has a class to live in.
+1. Merge #22.
+2. Open one PR: **Introduce `Products` wrappers and stop spreading `kind` checks.**
+3. After that, mortgage-vs-invest belongs on `Products::Mortgage`, not in the dashboard controller.
