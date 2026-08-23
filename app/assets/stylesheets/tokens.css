@@ -1,0 +1,32 @@
+/*
+ * Design tokens — palette, radius, shadow.
+ * Warm hey.com-style cream theme; dark mode via prefers-color-scheme.
+ */
+
+:root {
+  --cream: #faf6ee;
+  --cream-2: #f3ecdf;
+  --card: #ffffff;
+  --ink: #26221d;
+  --ink-soft: #6b6459;
+  --line: #e7ded0;
+  --accent: #ff5a3c;      /* warm coral */
+  --accent-ink: #ffffff;
+  --green: #2f9e6b;
+  --red: #d94f45;
+  --violet: #7b61ff;
+  --shadow: 0 1px 2px rgba(38, 34, 29, 0.06), 0 8px 24px rgba(38, 34, 29, 0.06);
+  --radius: 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cream: #1c1a17;
+    --cream-2: #242019;
+    --card: #2a2621;
+    --ink: #f5efe4;
+    --ink-soft: #b3a894;
+    --line: #38332b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}

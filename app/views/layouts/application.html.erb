@@ -18,8 +18,15 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%# Plain CSS modules via Propshaft — no build step. Order matters. %>
+    <%= stylesheet_link_tag "tokens",
+                            "base",
+                            "components/masthead",
+                            "components/reminder",
+                            "components/hero",
+                            "components/cards",
+                            "components/forms",
+                            "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 

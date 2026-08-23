@@ -1,0 +1,85 @@
+/*
+ * Global layout, typography, shared chrome (flash, buttons, section titles).
+ */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+/* Section heading */
+.section-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 28px 0 12px;
+}
+.section-title-row .section-title { margin: 0; }
+.section-title {
+  font-size: 1.1rem;
+  margin: 28px 0 12px;
+  color: var(--ink-soft);
+}
+.section-action {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.section-action:hover { text-decoration: underline; }
+
+/* Empty state */
+.empty {
+  text-align: center;
+  color: var(--ink-soft);
+  padding: 48px 20px;
+}
+
+/* Footnote */
+.footnote {
+  margin-top: 40px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+/* Flash message */
+.flash {
+  max-width: 720px;
+  margin: 16px auto -8px;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  background: var(--cream-2);
+  color: var(--ink);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 22px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-ghost { background: transparent; color: var(--ink-soft); }
+.btn-ghost:hover { color: var(--ink); }
