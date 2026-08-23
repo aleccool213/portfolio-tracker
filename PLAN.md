@@ -496,7 +496,8 @@ can be restored without typing every account/month by hand.
   - Credit cards: account-only rows (no balances).
   - Invalid rows fail the whole import with a clear line-numbered message.
 - **UI:** `/import` — export current portfolio, file upload, format help,
-  downloadable sample CSV. Import + export links from the dashboard footnote.
+  downloadable example CSV (`lib/portfolio_formats/example.csv`, not seeds).
+  Import + export links from the dashboard footnote.
 - **Transfer layer (format-agnostic):** `PortfolioRow`, `PortfolioImport`
   (transaction + result summary), `PortfolioExport` (accounts → rows).
 - **Format codec:** `PortfolioFormats::Csv` encodes/decodes rows. The

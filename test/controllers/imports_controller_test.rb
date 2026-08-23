@@ -9,11 +9,13 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", template_import_path
   end
 
-  test "template downloads sample csv" do
+  test "template downloads the committed example csv" do
     get template_import_url
     assert_response :success
     assert_equal "text/csv", response.media_type
-    assert_match(/name,institution,kind,recorded_on,amount/, response.body)
+    assert_match(/portfolio-example\.csv/, response.headers["Content-Disposition"])
+    assert_equal PortfolioFormats::Csv.template, response.body
+    assert_match(/Example TFSA/, response.body)
   end
 
   test "create imports csv and redirects to dashboard" do

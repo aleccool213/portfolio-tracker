@@ -32,7 +32,7 @@ class ImportsController < ApplicationController
 
   def template
     send_data CODEC.template,
-              filename: "portfolio-import-template.#{CODEC.extension}",
+              filename: "portfolio-example.#{CODEC.extension}",
               type: CODEC.content_type,
               disposition: "attachment"
   end

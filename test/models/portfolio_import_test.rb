@@ -11,6 +11,19 @@ class PortfolioImportTest < ActiveSupport::TestCase
     PortfolioImport.new(decoded.rows).call
   end
 
+  test "committed example csv imports as extra accounts" do
+    csv = PortfolioFormats::Csv.example_path.read
+    result = import_csv(csv)
+
+    assert result.success?, result.errors.inspect
+    assert_equal 4, result.accounts_created
+    assert Account.exists?(name: "Example TFSA", institution: "Questrade", kind: "tfsa")
+    assert Account.exists?(name: "Example Visa", kind: "credit_card")
+    mortgage = Account.find_by!(name: "Example mortgage", institution: "Scotiabank")
+    assert_equal "liability", mortgage.kind
+    assert_equal 5.14, mortgage.interest_rate.to_f
+  end
+
   test "imports from typed rows without a file format" do
     rows = [
       PortfolioRow.new(name: "Row TFSA", institution: "Bank", kind: "tfsa",

@@ -2,9 +2,17 @@ require "test_helper"
 require "stringio"
 
 class PortfolioFormatsCsvTest < ActiveSupport::TestCase
-  test "template includes expected headers" do
+  test "example csv is the committed template and parses cleanly" do
+    path = PortfolioFormats::Csv.example_path
+    assert path.exist?
+    assert_equal path.read, PortfolioFormats::Csv.template
+
     headers = CSV.parse(PortfolioFormats::Csv.template, headers: true).headers
     assert_equal PortfolioFormats::Csv::HEADERS, headers
+
+    decoded = PortfolioFormats::Csv.parse(path.open)
+    assert_empty decoded.errors
+    assert decoded.rows.size >= 4
   end
 
   test "generate then parse round-trips typed rows" do

@@ -69,17 +69,12 @@ class Csv
     end
   end
 
+  def self.example_path
+    Rails.root.join("lib/portfolio_formats/example.csv")
+  end
+
   def self.template
-    generate([
-      PortfolioRow.new(name: "Managed TFSA", institution: "Wealthsimple", kind: "tfsa",
-                       recorded_on: Date.new(2026, 1, 1), amount: 42_000),
-      PortfolioRow.new(name: "Managed TFSA", institution: "Wealthsimple", kind: "tfsa",
-                       recorded_on: Date.new(2026, 2, 1), amount: 43_200.50),
-      PortfolioRow.new(name: "Home mortgage", institution: "RBC", kind: "liability",
-                       recorded_on: Date.new(2026, 1, 1), amount: -318_000,
-                       interest_rate: 4.89, term_months: 60, original_principal: 450_000),
-      PortfolioRow.new(name: "Aeroplan Visa", institution: "TD", kind: "credit_card")
-    ])
+    example_path.read
   end
 
   def self.coerce_date(raw, origin)
