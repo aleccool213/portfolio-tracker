@@ -33,6 +33,8 @@
     <% end %>
   </section>
 
+  <%= render "allocation", allocation: @allocation %>
+
   <div class="section-title-row">
     <h2 class="section-title">Your accounts</h2>
     <%= link_to "Add account", new_account_path, class: "section-action" %>
@@ -115,5 +117,5 @@
     </div>
   <% end %>
 
-  <p class="footnote">Rebalancing nudges and allocation views are on the way.</p>
+  <p class="footnote">Canadian account ideas and more insights are on the way.</p>
 </div>
