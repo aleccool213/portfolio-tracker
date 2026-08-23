@@ -1,4 +1,4 @@
-# CLAUDE.md — working notes for agents
+# AGENTS.md — working notes for agents
 
 Guidance for AI agents (and humans) working in this repo. Read
 [`PLAN.md`](PLAN.md) for the product vision and the small, single-PR milestone
