@@ -49,3 +49,8 @@
   align-items: center;
   margin-top: 22px;
 }
+.form-hint {
+  margin: 8px 0 14px;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}

@@ -61,4 +61,10 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", new_account_path, text: "Add account"
     assert_select "a[href=?]", edit_account_path(accounts(:managed_tfsa)), text: "Edit"
   end
+
+  test "shows mortgage rate and term on liability cards" do
+    get root_url
+    assert_select ".liability-meta", text: /4\.89/
+    assert_select ".liability-meta", text: /5 yr term/
+  end
 end
