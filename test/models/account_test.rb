@@ -73,4 +73,9 @@ class AccountTest < ActiveSupport::TestCase
     account = Account.new(name: "TFSA", kind: "tfsa")
     assert account.valid?
   end
+
+  test "credit_card? is true for card accounts" do
+    assert accounts(:aeroplan).credit_card?
+    assert_not accounts(:managed_tfsa).credit_card?
+  end
 end

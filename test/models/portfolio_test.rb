@@ -12,10 +12,10 @@ class PortfolioTest < ActiveSupport::TestCase
   end
 
   test "net_worth ignores credit cards" do
-    card = Account.create!(name: "Test Card", institution: "TD", kind: "credit_card")
+    card = accounts(:aeroplan)
     AccountValue.create!(account: card, recorded_on: Date.new(2026, 6, 1), amount: 9_999)
 
-    portfolio = Portfolio.new(@accounts + [ card ])
+    portfolio = Portfolio.new(Account.order(:kind, :name).to_a)
     assert_equal BigDecimal("-274500"), portfolio.net_worth
   end
 

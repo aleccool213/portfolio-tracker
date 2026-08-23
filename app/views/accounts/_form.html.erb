@@ -42,6 +42,23 @@
     <%= f.number_field :original_principal, step: 0.01, min: 0, placeholder: "e.g. 450000" %>
   </div>
 
+  <p class="form-hint">Credit-card details (no balances — just why you keep the card):</p>
+
+  <div class="form-field">
+    <%= f.label :annual_fee %>
+    <%= f.number_field :annual_fee, step: 0.01, min: 0, placeholder: "e.g. 139" %>
+  </div>
+
+  <div class="form-field">
+    <%= f.label :perks %>
+    <%= f.text_area :perks, rows: 3, placeholder: "e.g. Free first checked bag, lounge access…" %>
+  </div>
+
+  <div class="form-field">
+    <%= f.label :renewal_on, "Renewal date" %>
+    <%= f.date_field :renewal_on %>
+  </div>
+
   <div class="form-actions">
     <%= f.submit class: "btn btn-primary" %>
     <%= link_to "Cancel", root_path, class: "btn btn-ghost" %>

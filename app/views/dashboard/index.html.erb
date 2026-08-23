@@ -38,9 +38,9 @@
     <%= link_to "Add account", new_account_path, class: "section-action" %>
   </div>
 
-  <% if @accounts.any? %>
+  <% if @value_accounts.any? %>
     <div class="cards">
-      <% @accounts.each do |account| %>
+      <% @value_accounts.each do |account| %>
         <article class="card">
           <div class="dot"><%= kind_emoji(account.kind) %></div>
           <div class="body">
@@ -72,6 +72,45 @@
   <% else %>
     <div class="empty">
       <p>No accounts yet. <%= link_to "Add an account", new_account_path %> to get started.</p>
+    </div>
+  <% end %>
+
+  <% if @cards.any? %>
+    <div class="section-title-row">
+      <h2 class="section-title">Your cards</h2>
+    </div>
+    <p class="section-note">Perks and fees only — cards never count toward net worth.</p>
+    <div class="cards">
+      <% @cards.each do |card| %>
+        <article class="card card-perk">
+          <div class="dot"><%= kind_emoji(card.kind) %></div>
+          <div class="body">
+            <div class="name"><%= card.name %></div>
+            <div class="meta"><%= card.institution %></div>
+            <% if card.perks.present? %>
+              <p class="perks"><%= simple_format(card.perks, {}, wrapper_tag: "span") %></p>
+            <% end %>
+            <div class="card-actions">
+              <%= link_to "Edit", edit_account_path(card) %>
+              <%= button_to "Delete", account_path(card), method: :delete,
+                    form: { data: { turbo_confirm: "Remove #{card.name}?" } },
+                    class: "link-button" %>
+            </div>
+          </div>
+          <div class="figures">
+            <div class="amount">
+              <% if card.annual_fee.present? %>
+                <%= number_to_currency(card.annual_fee, unit: "$", precision: 0) %><span class="fee-label">/yr</span>
+              <% else %>
+                —
+              <% end %>
+            </div>
+            <% if card.renewal_on.present? %>
+              <div class="tag">Renews <%= card.renewal_on.strftime("%b %Y") %></div>
+            <% end %>
+          </div>
+        </article>
+      <% end %>
     </div>
   <% end %>
 

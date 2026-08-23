@@ -41,7 +41,8 @@ class AccountsController < ApplicationController
   def account_params
     params.require(:account).permit(
       :name, :institution, :kind,
-      :interest_rate, :term_months, :original_principal
+      :interest_rate, :term_months, :original_principal,
+      :annual_fee, :perks, :renewal_on
     )
   end
 end

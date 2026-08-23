@@ -17,7 +17,9 @@ sample_accounts = [
   { name: "Everyday chequing",   institution: "Wealthsimple", kind: "cash" },
   { name: "Home mortgage",       institution: "RBC",          kind: "liability",
     interest_rate: 4.89, term_months: 60, original_principal: 450_000 },
-  { name: "Aeroplan Visa Infinite", institution: "TD",        kind: "credit_card" }
+  { name: "Aeroplan Visa Infinite", institution: "TD",        kind: "credit_card" },
+  { name: "Amex Cobalt",           institution: "Amex",      kind: "credit_card" },
+  { name: "Simplii no-fee",        institution: "Simplii",   kind: "credit_card" }
 ]
 
 sample_accounts.each do |attrs|
@@ -35,6 +37,30 @@ if mortgage
     term_months: 60,
     original_principal: 450_000
   )
+end
+
+# Credit-card perks (no balances). Idempotent field updates.
+card_details = {
+  [ "Aeroplan Visa Infinite", "TD" ] => {
+    annual_fee: 139,
+    perks: "Aeroplan points, first checked bag free, lounge passes.",
+    renewal_on: Date.new(Date.current.year, 11, 1)
+  },
+  [ "Amex Cobalt", "Amex" ] => {
+    annual_fee: 12.99 * 12,
+    perks: "5x on groceries & transit, solid everyday earner.",
+    renewal_on: Date.new(Date.current.year, 3, 15)
+  },
+  [ "Simplii no-fee", "Simplii" ] => {
+    annual_fee: 0,
+    perks: "No annual fee backup card for free withdrawals.",
+    renewal_on: Date.new(Date.current.year, 8, 1)
+  }
+}
+
+card_details.each do |(name, institution), details|
+  card = Account.find_by(name: name, institution: institution)
+  card&.update!(details.merge(kind: "credit_card"))
 end
 
 # Monthly snapshots (AccountValue) so the dashboard has real dollar figures.

@@ -67,4 +67,18 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".liability-meta", text: /4\.89/
     assert_select ".liability-meta", text: /5 yr term/
   end
+
+  test "shows credit card perks in the cards section" do
+    get root_url
+    assert_select ".section-title", text: "Your cards"
+    assert_select ".card-perk .name", text: "Aeroplan Visa Infinite"
+    assert_select ".card-perk .perks", text: /Aeroplan points/
+    assert_select ".card-perk .amount", text: /\$139/
+  end
+
+  test "credit cards are not listed with valued accounts" do
+    get root_url
+    assert_select ".card:not(.card-perk) .name", text: "Aeroplan Visa Infinite", count: 0
+    assert_select ".card-perk .name", text: "Aeroplan Visa Infinite"
+  end
 end
