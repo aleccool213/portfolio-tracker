@@ -11,6 +11,62 @@ class PortfolioImportTest < ActiveSupport::TestCase
     PortfolioImport.new(decoded.rows).call
   end
 
+  test "account_id updates an existing account instead of creating" do
+    tfsa = accounts(:managed_tfsa)
+
+    result = PortfolioImport.new([
+      PortfolioRow.new(account_id: tfsa.id, name: "Renamed TFSA", institution: tfsa.institution, kind: "tfsa")
+    ]).call
+
+    assert result.success?, result.errors.inspect
+    assert_equal 0, result.accounts_created
+    assert_equal 1, result.accounts_updated
+    assert_equal "Renamed TFSA", tfsa.reload.name
+    assert_equal 1, Account.where(name: "Renamed TFSA").count
+  end
+
+  test "value_id updates an existing snapshot" do
+    value = account_values(:managed_tfsa_june)
+    tfsa = value.account
+
+    result = PortfolioImport.new([
+      PortfolioRow.new(
+        account_id: tfsa.id, value_id: value.id, name: tfsa.name, institution: tfsa.institution,
+        kind: tfsa.kind, recorded_on: value.recorded_on, amount: 99_999
+      )
+    ]).call
+
+    assert result.success?, result.errors.inspect
+    assert_equal BigDecimal("99999"), value.reload.amount
+    assert_equal 2, tfsa.account_values.count
+  end
+
+  test "reimporting an export is idempotent" do
+    tfsa = accounts(:managed_tfsa)
+    rows = PortfolioExport.rows([ tfsa ])
+    value_count = tfsa.account_values.count
+
+    first = PortfolioImport.new(rows).call
+    second = PortfolioImport.new(rows).call
+
+    assert first.success?, first.errors.inspect
+    assert second.success?, second.errors.inspect
+    assert_equal 0, second.accounts_created
+    assert_equal 1, Account.where(name: "Managed TFSA", institution: "Wealthsimple").count
+    assert_equal value_count, tfsa.account_values.count
+  end
+
+  test "unknown account_id falls back to name match then create" do
+    result = PortfolioImport.new([
+      PortfolioRow.new(account_id: 9_999_999, name: "Brand New TFSA", institution: "WS",
+                       kind: "tfsa", recorded_on: Date.new(2026, 1, 1), amount: 10)
+    ]).call
+
+    assert result.success?, result.errors.inspect
+    assert_equal 1, result.accounts_created
+    assert Account.exists?(name: "Brand New TFSA")
+  end
+
   test "committed example csv imports as extra accounts" do
     csv = PortfolioFormats::Csv.example_path.read
     result = import_csv(csv)

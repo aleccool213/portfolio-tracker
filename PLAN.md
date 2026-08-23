@@ -488,9 +488,12 @@ can be restored without typing every account/month by hand.
 (parallel to the later feature stack; ships as soon as M5 is in).
 
 - **CSV format** (header row, UTF-8):
-  `name,institution,kind,recorded_on,amount`
-  - Match accounts on `(name, institution)`; create when missing (`kind` required).
-  - Upsert `AccountValue` on `(account, recorded_on)` when both date + amount present.
+  `account_id,value_id,name,institution,kind,recorded_on,amount,...`
+  - `account_id` / `value_id` (from export) uniquely identify rows and **update**
+    those records. Unknown ids fall back to name + institution, then create.
+  - Import is idempotent: re-importing an export does not duplicate accounts/values.
+  - Match accounts on `account_id` then `(name, institution)`; create when missing (`kind` required).
+  - Upsert `AccountValue` on `value_id` then `(account, recorded_on)`.
   - Normalize `recorded_on` to the 1st of the month.
   - Allow `$` / commas in amounts; liabilities negative.
   - Credit cards: account-only rows (no balances).

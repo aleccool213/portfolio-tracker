@@ -5,8 +5,8 @@ module PortfolioFormats
 # quirks ($ / commas in amounts, header rows) live here.
 class Csv
   REQUIRED_HEADERS = %w[name institution kind recorded_on amount].freeze
-  OPTIONAL_HEADERS = %w[interest_rate term_months original_principal].freeze
-  HEADERS = (REQUIRED_HEADERS + OPTIONAL_HEADERS).freeze
+  OPTIONAL_HEADERS = %w[account_id value_id interest_rate term_months original_principal].freeze
+  HEADERS = (%w[account_id value_id] + REQUIRED_HEADERS + %w[interest_rate term_months original_principal]).freeze
 
   Decoded = Data.define(:rows, :errors)
 
@@ -28,12 +28,17 @@ class Csv
       hash = raw.to_h.transform_values { |v| v.to_s.strip.presence }
       recorded_on, date_error = coerce_date(hash["recorded_on"], origin)
       amount, amount_error = coerce_amount(hash["amount"], origin)
-      if date_error || amount_error
-        errors.concat([ date_error, amount_error ].compact)
+      account_id, account_id_error = coerce_id(hash["account_id"], origin, "account_id")
+      value_id, value_id_error = coerce_id(hash["value_id"], origin, "value_id")
+      id_errors = [ date_error, amount_error, account_id_error, value_id_error ].compact
+      if id_errors.any?
+        errors.concat(id_errors)
         next
       end
 
       rows << PortfolioRow.new(
+        account_id: account_id,
+        value_id: value_id,
         name: hash["name"],
         institution: hash["institution"],
         kind: hash["kind"],
@@ -56,6 +61,8 @@ class Csv
       csv << HEADERS
       Array(rows).each do |row|
         csv << [
+          row.account_id,
+          row.value_id,
           row.name,
           row.institution,
           row.kind,
@@ -76,6 +83,16 @@ class Csv
   def self.template
     example_path.read
   end
+
+  def self.coerce_id(raw, origin, field)
+    return [ nil, nil ] if raw.blank?
+
+    id = Integer(raw, exception: false)
+    return [ nil, "#{origin}: #{field} is not a whole number (got #{raw.inspect})" ] if id.nil?
+
+    [ id, nil ]
+  end
+  private_class_method :coerce_id
 
   def self.coerce_date(raw, origin)
     return [ nil, nil ] if raw.blank?

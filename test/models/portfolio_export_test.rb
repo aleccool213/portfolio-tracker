@@ -13,6 +13,8 @@ class PortfolioExportTest < ActiveSupport::TestCase
     assert_equal PortfolioFormats::Csv::HEADERS, rows.headers
     assert_equal 2, rows.size
     assert_equal [ "2026-05-01", "2026-06-01" ], rows.map { |r| r["recorded_on"] }
+    assert_equal accounts(:managed_tfsa).id.to_s, rows.first["account_id"]
+    assert_equal account_values(:managed_tfsa_may).id.to_s, rows.first["value_id"]
     assert_equal "Managed TFSA", rows.first["name"]
     assert_equal "tfsa", rows.first["kind"]
     assert_equal "42000.0", rows.first["amount"]

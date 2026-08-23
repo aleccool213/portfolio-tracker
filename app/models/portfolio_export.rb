@@ -11,6 +11,8 @@ class PortfolioExport
 
     snapshots.map do |value|
       PortfolioRow.new(
+        account_id: account.id,
+        value_id: value&.id,
         name: account.name,
         institution: account.institution,
         kind: account.kind,

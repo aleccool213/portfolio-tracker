@@ -19,7 +19,7 @@
   <section class="card import-card">
     <div class="body">
       <div class="name">Upload a file</div>
-      <div class="meta">UTF-8 CSV with a header row. Existing accounts (same name + institution) are reused; values for the same month are updated.</div>
+      <div class="meta">UTF-8 CSV with a header row. Rows with <code>account_id</code> / <code>value_id</code> (from an export) update those records; otherwise we match on name + institution or create. Re-importing the same file is safe.</div>
     </div>
 
     <%= form_with url: import_path, method: :post, multipart: true, class: "import-form" do %>
@@ -38,12 +38,15 @@
   <section class="import-help">
     <h2 class="section-title">Format</h2>
     <p class="import-help-copy">
-      Columns: <code>name</code>, <code>institution</code>, <code>kind</code>,
-      <code>recorded_on</code>, <code>amount</code>.
+      Columns: <code>account_id</code>, <code>value_id</code>, <code>name</code>,
+      <code>institution</code>, <code>kind</code>, <code>recorded_on</code>,
+      <code>amount</code>.
       Liabilities also need <code>interest_rate</code>, <code>term_months</code>,
       and <code>original_principal</code>.
     </p>
     <ul class="import-help-list">
+      <li><strong>account_id</strong> — optional; from an export, updates that account (can rename)</li>
+      <li><strong>value_id</strong> — optional; from an export, updates that month's snapshot</li>
       <li><strong>name</strong> — required (e.g. Managed TFSA)</li>
       <li><strong>institution</strong> — optional (e.g. Wealthsimple)</li>
       <li><strong>kind</strong> — required for new accounts:
