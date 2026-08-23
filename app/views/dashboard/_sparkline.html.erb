@@ -1,0 +1,13 @@
+<% amounts = account.account_values.sort_by(&:recorded_on).map(&:amount) %>
+<% points = sparkline_points(amounts) %>
+<% if points.any? %>
+  <svg class="sparkline" viewBox="0 0 80 28" width="80" height="28" aria-hidden="true">
+    <polyline
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      points="<%= points.join(' ') %>" />
+  </svg>
+<% end %>
