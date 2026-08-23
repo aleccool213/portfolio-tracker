@@ -4,10 +4,10 @@ require "stringio"
 class PortfolioCsvImportTest < ActiveSupport::TestCase
   test "imports new accounts and monthly values" do
     csv = <<~CSV
-      name,institution,kind,recorded_on,amount
-      Import TFSA,Import Bank,tfsa,2026-01-15,42000
-      Import TFSA,Import Bank,tfsa,2026-02-01,43000.50
-      Import mortgage,Import Bank,liability,2026-01-01,-318000
+      name,institution,kind,recorded_on,amount,interest_rate,term_months,original_principal
+      Import TFSA,Import Bank,tfsa,2026-01-15,42000,,,
+      Import TFSA,Import Bank,tfsa,2026-02-01,43000.50,,,
+      Import mortgage,Import Bank,liability,2026-01-01,-318000,4.89,60,450000
     CSV
 
     result = PortfolioCsvImport.new(StringIO.new(csv)).call

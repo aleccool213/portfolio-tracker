@@ -2,6 +2,8 @@
 #
 # Expected headers (case-insensitive, order free):
 #   name, institution, kind, recorded_on, amount
+# Optional (needed when creating a liability): interest_rate, term_months,
+# original_principal.
 #
 # - name + kind create/find an Account (matched on name + institution).
 # - recorded_on + amount upsert an AccountValue for that account.
@@ -10,7 +12,9 @@
 require "csv"
 
 class PortfolioCsvImport
-  HEADERS = %w[name institution kind recorded_on amount].freeze
+  REQUIRED_HEADERS = %w[name institution kind recorded_on amount].freeze
+  OPTIONAL_HEADERS = %w[interest_rate term_months original_principal].freeze
+  HEADERS = (REQUIRED_HEADERS + OPTIONAL_HEADERS).freeze
 
   Result = Data.define(:accounts_created, :accounts_updated, :values_upserted, :errors) do
     def success?
@@ -29,10 +33,10 @@ class PortfolioCsvImport
   def self.template_csv
     CSV.generate(headers: true) do |csv|
       csv << HEADERS
-      csv << [ "Managed TFSA", "Wealthsimple", "tfsa", "2026-01-01", "42000.00" ]
-      csv << [ "Managed TFSA", "Wealthsimple", "tfsa", "2026-02-01", "43200.50" ]
-      csv << [ "Home mortgage", "RBC", "liability", "2026-01-01", "-318000.00" ]
-      csv << [ "Aeroplan Visa", "TD", "credit_card", "", "" ]
+      csv << [ "Managed TFSA", "Wealthsimple", "tfsa", "2026-01-01", "42000.00", "", "", "" ]
+      csv << [ "Managed TFSA", "Wealthsimple", "tfsa", "2026-02-01", "43200.50", "", "", "" ]
+      csv << [ "Home mortgage", "RBC", "liability", "2026-01-01", "-318000.00", "4.89", "60", "450000" ]
+      csv << [ "Aeroplan Visa", "TD", "credit_card", "", "", "", "", "" ]
     end
   end
 
@@ -79,7 +83,7 @@ class PortfolioCsvImport
 
   def parse_rows
     table = CSV.parse(@io.read, headers: true, header_converters: :downcase, skip_blanks: true)
-    missing = HEADERS - table.headers.compact.map { |h| h.to_s.strip.downcase }
+    missing = REQUIRED_HEADERS - table.headers.compact.map { |h| h.to_s.strip.downcase }
     if missing.any?
       @errors << "Missing required column(s): #{missing.join(', ')}"
       return []
@@ -115,7 +119,14 @@ class PortfolioCsvImport
         return
       end
 
-      account = Account.create!(name: name, institution: institution, kind: kind)
+      account = Account.create!(
+        name: name,
+        institution: institution,
+        kind: kind,
+        interest_rate: row["interest_rate"],
+        term_months: row["term_months"],
+        original_principal: row["original_principal"]
+      )
       note_account(account, created: true)
     else
       note_account(account, created: false)
