@@ -1,10 +1,12 @@
 # Builds format-agnostic PortfolioRows from accounts. A codec (CSV today)
 # turns these into a downloadable file.
 class PortfolioExport
+  # One row per monthly snapshot; credit cards (no values) get a single blank-value row.
   def self.rows(accounts = Account.includes(:account_values).order(:kind, :name))
     Array(accounts).flat_map { |account| rows_for(account) }
   end
 
+  # One PortfolioRow per snapshot; a nil snapshot keeps credit cards in the file.
   def self.rows_for(account)
     values = account.account_values.chronological.to_a
     snapshots = values.empty? ? [ nil ] : values

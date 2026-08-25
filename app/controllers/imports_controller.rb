@@ -6,6 +6,7 @@ class ImportsController < ApplicationController
   def show
   end
 
+  # Parse the upload and render a create/update preview. Does not persist.
   def create
     file = params[:file]
 
@@ -26,6 +27,7 @@ class ImportsController < ApplicationController
     render :preview
   end
 
+  # Apply the CSV from the preview form (hidden field), then redirect.
   def confirm
     csv_body = params[:csv]
     if csv_body.blank?
@@ -49,6 +51,7 @@ class ImportsController < ApplicationController
     end
   end
 
+  # Committed example CSV used as the downloadable template.
   def template
     send_data CODEC.template,
               filename: "portfolio-example.#{CODEC.extension}",
@@ -56,6 +59,7 @@ class ImportsController < ApplicationController
               disposition: "attachment"
   end
 
+  # Current accounts + values in the same columns import expects.
   def export
     send_data CODEC.generate(PortfolioExport.rows),
               filename: "portfolio-#{Date.current.iso8601}.#{CODEC.extension}",

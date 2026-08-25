@@ -3,11 +3,13 @@
 class PortfolioImport
   ACCOUNT_COMPARE_KEYS = %w[name institution kind interest_rate term_months original_principal].freeze
 
+  # Outcome of #call after a write (or a rolled-back attempt).
   Result = Data.define(:accounts_created, :accounts_updated, :values_upserted, :errors) do
     def success?
       errors.empty?
     end
 
+    # Flash-style line, e.g. "2 accounts created, 3 values saved".
     def summary
       parts = []
       parts << "#{accounts_created} account#{'s' if accounts_created != 1} created" if accounts_created.positive?
@@ -17,17 +19,21 @@ class PortfolioImport
     end
   end
 
+  # One CSV row as it would be applied: :create / :update / :keep / :none.
+  # account_changes / value_changes are { "field" => [before, after] } on updates.
   Entry = Data.define(:row, :account_action, :value_action, :account_changes, :value_changes, :error) do
     def initialize(row:, account_action: nil, value_action: :none, account_changes: {}, value_changes: {}, error: nil)
       super
     end
   end
 
+  # Dry-run of #call. success? is false when any row has an error (confirm hidden).
   Plan = Data.define(:entries, :errors) do
     def success?
       errors.empty?
     end
 
+    # Preview headline, e.g. "1 account will be created · 2 values will be created".
     def summary
       usable = entries.reject { |entry| entry.error.present? }
       bits = [
@@ -45,6 +51,7 @@ class PortfolioImport
       bits.empty? ? "Nothing will change" : bits.join(" · ")
     end
 
+    # "2 accounts will be created, 1 updated" — or nil when both counts are zero.
     def group_phrase(creates, updates, noun)
       return if creates.zero? && updates.zero?
 
@@ -69,6 +76,8 @@ class PortfolioImport
     @seen_account_ids = Set.new
   end
 
+  # Classify each row as create / update / keep without writing.
+  # Same matching rules as #call. Does not mutate persisted records.
   def preview
     @errors = []
     @pending_new_accounts = {}
@@ -76,6 +85,7 @@ class PortfolioImport
     Plan.new(entries: entries, errors: @errors)
   end
 
+  # Persist rows in a transaction. Any row error rolls the whole batch back.
   def call
     Account.transaction do
       @rows.each { |row| import_row(row) }
@@ -98,6 +108,7 @@ class PortfolioImport
 
   private
 
+  # Create or update one account, then upsert its value when the row has one.
   def import_row(row)
     name = row.name.to_s.strip.presence
     if name.blank?
@@ -131,6 +142,7 @@ class PortfolioImport
     error(row, e.message)
   end
 
+  # Match account_id first, then (name, institution). Unknown ids fall through.
   def find_account(row)
     if row.account_id.present?
       account = Account.find_by(id: row.account_id)
@@ -144,6 +156,7 @@ class PortfolioImport
     row.kind.to_s.strip.downcase.presence
   end
 
+  # Attributes for Account.create! — includes liability fields even when blank.
   def account_attributes(row, name)
     {
       name: name,
@@ -155,6 +168,7 @@ class PortfolioImport
     }
   end
 
+  # Blank CSV cells leave the existing attribute alone (except name/institution).
   def assign_account_attributes(account, row, name)
     account.name = name
     account.institution = row.institution.presence
@@ -164,6 +178,7 @@ class PortfolioImport
     account.original_principal = row.original_principal unless row.original_principal.nil?
   end
 
+  # Upsert a monthly snapshot, or skip for account-only / credit-card rows.
   def apply_value(account, row)
     return if row.value_id.blank? && row.recorded_on.blank? && row.amount.blank?
 
@@ -187,6 +202,7 @@ class PortfolioImport
     @values_upserted += 1
   end
 
+  # Match value_id first (must belong to this account), then (account, recorded_on).
   def find_value(account, row, recorded_on)
     if row.value_id.present?
       value = AccountValue.find_by(id: row.value_id)
@@ -203,6 +219,7 @@ class PortfolioImport
     AccountValue.find_or_initialize_by(account: account, recorded_on: recorded_on)
   end
 
+  # Snapshots always live on the 1st of the month.
   def coerce_recorded_on(row)
     return if row.recorded_on.blank?
 
@@ -216,6 +233,7 @@ class PortfolioImport
     prefixed
   end
 
+  # Count each account once even when the file has many monthly rows for it.
   def note_account(account, created:)
     return if @seen_account_ids.include?(account.id)
 
@@ -227,6 +245,8 @@ class PortfolioImport
     end
   end
 
+  # Same branches as import_row, but returns an Entry and never saves.
+  # Later months of a new account in this file are :keep on the account.
   def preview_row(row)
     name = row.name.to_s.strip.presence
     if name.blank?
@@ -272,6 +292,7 @@ class PortfolioImport
     Entry.new(row: row, error: error(row, e.message))
   end
 
+  # Classify the value half of a row without initializing AR records.
   def preview_value(account, row)
     if row.value_id.blank? && row.recorded_on.blank? && row.amount.blank?
       return { value_action: :none, value_changes: {} }
@@ -310,6 +331,7 @@ class PortfolioImport
     { value_action: changes.any? ? :update : :keep, value_changes: changes }
   end
 
+  # Like find_value, but never builds a new record (preview must not dirty state).
   def find_existing_value(account, row, recorded_on)
     if row.value_id.present?
       value = AccountValue.find_by(id: row.value_id)
@@ -328,6 +350,7 @@ class PortfolioImport
     AccountValue.find_by(account: account, recorded_on: recorded_on)
   end
 
+  # Attribute diffs after AR casting, without assigning on the persisted account.
   def proposed_account_changes(existing, row, name)
     current = existing.attributes.slice(*ACCOUNT_COMPARE_KEYS)
     proposed = current.merge("name" => name, "institution" => row.institution.presence)
@@ -345,6 +368,7 @@ class PortfolioImport
     changes
   end
 
+  # Cast a raw CSV value the way the model would on assign (Float → decimal, etc.).
   def cast_attribute(model, field, raw)
     model.new(field => raw).public_send(field)
   end

@@ -13,6 +13,8 @@ class Csv
   def self.content_type = "text/csv"
   def self.extension = "csv"
 
+  # Decode a CSV IO into PortfolioRows. Row errors are line-numbered; missing
+  # required headers fail the whole file. Amounts may include $ and commas.
   def self.parse(io)
     errors = []
     table = CSV.parse(io.read, headers: true, header_converters: :downcase, skip_blanks: true)
@@ -56,6 +58,7 @@ class Csv
     Decoded.new(rows: [], errors: [ "Could not parse CSV: #{e.message}" ])
   end
 
+  # Encode PortfolioRows as a headered CSV string (same columns as parse).
   def self.generate(rows)
     CSV.generate(headers: true) do |csv|
       csv << HEADERS
@@ -80,10 +83,12 @@ class Csv
     Rails.root.join("lib/portfolio_formats/example.csv")
   end
 
+  # Bytes of the committed example file (not generated, so the template stays stable).
   def self.template
     example_path.read
   end
 
+  # Returns [id, nil] or [nil, "Line N: field is not a whole number"].
   def self.coerce_id(raw, origin, field)
     return [ nil, nil ] if raw.blank?
 
@@ -94,6 +99,7 @@ class Csv
   end
   private_class_method :coerce_id
 
+  # Returns [date, nil] or [nil, "Line N: recorded_on is not a valid date"].
   def self.coerce_date(raw, origin)
     return [ nil, nil ] if raw.blank?
 
@@ -103,6 +109,7 @@ class Csv
   end
   private_class_method :coerce_date
 
+  # Strips $ / commas / spaces; "(123)" becomes negative.
   def self.coerce_amount(raw, origin)
     return [ nil, nil ] if raw.blank?
 
@@ -114,6 +121,7 @@ class Csv
   end
   private_class_method :coerce_amount
 
+  # BigDecimal without scientific notation so re-import parses cleanly.
   def self.decimal(value)
     return if value.nil?
 
