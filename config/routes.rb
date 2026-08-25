@@ -18,6 +18,7 @@ Rails.application.routes.draw do
 
   # Bulk load accounts + monthly values from a CSV (for existing portfolios).
   resource :import, only: [ :show, :create ] do
+    post :confirm
     get :template, on: :collection
     get :export, on: :collection
   end

@@ -11,6 +11,117 @@ class PortfolioImportTest < ActiveSupport::TestCase
     PortfolioImport.new(decoded.rows).call
   end
 
+  test "preview does not persist new accounts or values" do
+    rows = [
+      PortfolioRow.new(name: "Preview TFSA", institution: "Bank", kind: "tfsa",
+                       recorded_on: Date.new(2026, 1, 1), amount: 1_000)
+    ]
+
+    assert_no_difference [ "Account.count", "AccountValue.count" ] do
+      plan = PortfolioImport.new(rows).preview
+      assert plan.success?, plan.errors.inspect
+      assert_equal :create, plan.entries.first.account_action
+      assert_equal :create, plan.entries.first.value_action
+    end
+
+    assert_not Account.exists?(name: "Preview TFSA")
+  end
+
+  test "preview marks the first month of a new account as create and later months as keep" do
+    rows = [
+      PortfolioRow.new(name: "New TFSA", institution: "Bank", kind: "tfsa",
+                       recorded_on: Date.new(2026, 1, 1), amount: 10, origin: "Line 2"),
+      PortfolioRow.new(name: "New TFSA", institution: "Bank", kind: "tfsa",
+                       recorded_on: Date.new(2026, 2, 1), amount: 20, origin: "Line 3")
+    ]
+
+    plan = PortfolioImport.new(rows).preview
+
+    assert plan.success?, plan.errors.inspect
+    assert_equal :create, plan.entries[0].account_action
+    assert_equal :create, plan.entries[0].value_action
+    assert_equal :keep, plan.entries[1].account_action
+    assert_equal :create, plan.entries[1].value_action
+    assert_match(/1 account will be created/, plan.summary)
+    assert_match(/2 values will be created/, plan.summary)
+  end
+
+  test "preview marks a new month on an existing account as create value" do
+    account = accounts(:managed_tfsa)
+    rows = [
+      PortfolioRow.new(name: account.name, institution: account.institution, kind: account.kind,
+                       recorded_on: Date.new(2026, 7, 1), amount: 50_000)
+    ]
+
+    plan = PortfolioImport.new(rows).preview
+
+    assert plan.success?, plan.errors.inspect
+    assert_equal :keep, plan.entries.first.account_action
+    assert_equal :create, plan.entries.first.value_action
+    assert_match(/1 value will be created/, plan.summary)
+  end
+
+  test "preview reports account rename and value amount change with before and after" do
+    tfsa = accounts(:managed_tfsa)
+    value = account_values(:managed_tfsa_june)
+
+    plan = PortfolioImport.new([
+      PortfolioRow.new(
+        account_id: tfsa.id, value_id: value.id, name: "Renamed TFSA", institution: tfsa.institution,
+        kind: tfsa.kind, recorded_on: value.recorded_on, amount: 99_999
+      )
+    ]).preview
+
+    assert plan.success?, plan.errors.inspect
+    entry = plan.entries.first
+    assert_equal :update, entry.account_action
+    assert_equal :update, entry.value_action
+    assert_equal [ "Managed TFSA", "Renamed TFSA" ], entry.account_changes["name"]
+    assert_equal [ BigDecimal("43500"), BigDecimal("99999") ], entry.value_changes["amount"]
+    assert_equal "Managed TFSA", tfsa.reload.name
+    assert_equal BigDecimal("43500"), value.reload.amount
+  end
+
+  test "preview of an export is all keep" do
+    tfsa = accounts(:managed_tfsa)
+    rows = PortfolioExport.rows([ tfsa ])
+
+    plan = PortfolioImport.new(rows).preview
+
+    assert plan.success?, plan.errors.inspect
+    assert plan.entries.any?
+    assert plan.entries.all? { |entry| entry.account_action == :keep }
+    assert plan.entries.all? { |entry| entry.value_action == :keep }
+    assert_equal "Nothing will change", plan.summary
+  end
+
+  test "preview rejects a credit card with a balance and does not persist" do
+    rows = [
+      PortfolioRow.new(name: "Preview Visa", institution: "TD", kind: "credit_card",
+                       recorded_on: Date.new(2026, 1, 1), amount: 500, origin: "Line 2")
+    ]
+
+    assert_no_difference [ "Account.count", "AccountValue.count" ] do
+      plan = PortfolioImport.new(rows).preview
+      assert_not plan.success?
+      assert_match(/credit cards do not track balances/, plan.errors.first)
+      assert_match(/credit cards do not track balances/, plan.entries.first.error)
+    end
+  end
+
+  test "preview rejects unknown kind" do
+    rows = [
+      PortfolioRow.new(name: "Mystery", institution: "Bank", kind: "hedge_fund",
+                       recorded_on: Date.new(2026, 1, 1), amount: 1, origin: "Line 2")
+    ]
+
+    plan = PortfolioImport.new(rows).preview
+
+    assert_not plan.success?
+    assert_match(/kind must be one of/, plan.errors.first)
+    assert_nil plan.entries.first.account_action
+  end
+
   test "account_id updates an existing account instead of creating" do
     tfsa = accounts(:managed_tfsa)
 

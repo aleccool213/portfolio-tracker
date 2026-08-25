@@ -14,7 +14,26 @@ class ImportsController < ApplicationController
       return
     end
 
-    decoded = CODEC.parse(file)
+    csv_body = file.read
+    decoded = CODEC.parse(StringIO.new(csv_body))
+    if decoded.errors.any?
+      redirect_to import_path, alert: "Import failed: #{decoded.errors.first(5).join(' · ')}"
+      return
+    end
+
+    @plan = PortfolioImport.new(decoded.rows).preview
+    @csv_body = csv_body
+    render :preview
+  end
+
+  def confirm
+    csv_body = params[:csv]
+    if csv_body.blank?
+      redirect_to import_path, alert: "Upload a CSV again to import."
+      return
+    end
+
+    decoded = CODEC.parse(StringIO.new(csv_body))
     result = if decoded.errors.any?
       PortfolioImport::Result.new(
         accounts_created: 0, accounts_updated: 0, values_upserted: 0, errors: decoded.errors

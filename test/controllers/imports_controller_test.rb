@@ -6,6 +6,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form[action=?]", import_path
     assert_select "input[type=file][name=file]"
+    assert_select "input[type=submit][value=?]", "Review import"
     assert_select "a[href=?]", template_import_path
   end
 
@@ -18,7 +19,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_match(/Example TFSA/, response.body)
   end
 
-  test "create imports csv and redirects to dashboard" do
+  test "create previews csv and does not persist" do
     csv = <<~CSV
       name,institution,kind,recorded_on,amount
       Controller Import TFSA,Wealthsimple,tfsa,2026-03-01,50000
@@ -30,14 +31,39 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
 
     uploaded = Rack::Test::UploadedFile.new(file.path, "text/csv")
 
-    assert_difference -> { Account.count } => 1, -> { AccountValue.count } => 1 do
+    assert_no_difference [ "Account.count", "AccountValue.count" ] do
       post import_url, params: { file: uploaded }
+    end
+
+    assert_response :success
+    assert_select "h1", text: /Review import/
+    assert_select ".badge", text: "Create"
+    assert_select "td", text: /Controller Import TFSA/
+    assert_select "form[action=?]", confirm_import_path
+    assert_select "input[type=hidden][name=csv]"
+    assert_select "input[type=submit][value=?]", "Apply import"
+  ensure
+    file.close!
+  end
+
+  test "confirm imports the previewed csv and redirects to dashboard" do
+    csv = <<~CSV
+      name,institution,kind,recorded_on,amount
+      Controller Import TFSA,Wealthsimple,tfsa,2026-03-01,50000
+    CSV
+
+    assert_difference -> { Account.count } => 1, -> { AccountValue.count } => 1 do
+      post confirm_import_url, params: { csv: csv }
     end
 
     assert_redirected_to root_path
     assert_match(/Import complete/, flash[:notice])
-  ensure
-    file.close!
+  end
+
+  test "confirm without csv shows alert" do
+    post confirm_import_url, params: {}
+    assert_redirected_to import_path
+    assert_match(/Upload a CSV/, flash[:alert])
   end
 
   test "create without file shows alert" do
@@ -60,6 +86,28 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference [ "Account.count", "AccountValue.count" ] do
       post import_url, params: { file: uploaded }
     end
+
+    assert_response :success
+    assert_select "h1", text: /Review import/
+    assert_select ".import-errors"
+    assert_select "form[action=?]", confirm_import_path, count: 0
+    assert_not Account.exists?(name: "Bad Kind Account")
+  ensure
+    file.close!
+  end
+
+  test "create with missing columns redirects to the form" do
+    csv = <<~CSV
+      foo,bar
+      a,b
+    CSV
+
+    file = Tempfile.new([ "bad", ".csv" ])
+    file.write(csv)
+    file.rewind
+    uploaded = Rack::Test::UploadedFile.new(file.path, "text/csv")
+
+    post import_url, params: { file: uploaded }
 
     assert_redirected_to import_path
     assert_match(/Import failed/, flash[:alert])

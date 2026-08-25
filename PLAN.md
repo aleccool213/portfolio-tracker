@@ -501,6 +501,9 @@ can be restored without typing every account/month by hand.
 - **UI:** `/import` — export current portfolio, file upload, format help,
   downloadable example CSV (`lib/portfolio_formats/example.csv`, not seeds).
   Import + export links from the dashboard footnote.
+  Upload is two-phase: `POST /import` previews a table of create / update / keep
+  (no writes); `POST /import/confirm` applies the same CSV. Confirm is hidden
+  when the plan has errors.
 - **Transfer layer (format-agnostic):** `PortfolioRow`, `PortfolioImport`
   (transaction + result summary), `PortfolioExport` (accounts → rows).
 - **Format codec:** `PortfolioFormats::Csv` encodes/decodes rows. The
@@ -509,7 +512,8 @@ can be restored without typing every account/month by hand.
 - **Tests:** happy path (create accounts + values), upsert on re-import, reject
   bad kind/date/amount, reject credit-card balances, missing columns, template
   download, export includes fixture rows and round-trips through import,
-  domain import from typed rows (no CSV).
+  domain import from typed rows (no CSV), preview classifies create/update/keep
+  without writing, upload renders preview, confirm persists.
 - **Files:** transfer POROs, CSV codec, controller, view, routes, CSS,
   dashboard link, tests.
 - **Out of scope:** brokerage statement parsers, FX conversion, MCP server
