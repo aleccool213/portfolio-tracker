@@ -1,0 +1,79 @@
+<% content_for :title, "Review import" %>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>Review import <span class="wave">👀</span></h1>
+    <p>Nothing is saved until you apply. Check which rows create vs update.</p>
+  </header>
+
+  <section class="card import-card">
+    <div class="body">
+      <div class="name"><%= @plan.summary %></div>
+      <div class="meta">This is a dry run of the file you just uploaded.</div>
+    </div>
+  </section>
+
+  <% unless @plan.success? %>
+    <div class="import-errors">
+      <strong>This import cannot be applied until these rows are fixed.</strong>
+      <ul>
+        <% @plan.errors.first(8).each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="import-table-wrap">
+    <table class="import-table">
+      <thead>
+        <tr>
+          <th>Line</th>
+          <th>Account</th>
+          <th>Action</th>
+          <th>Month</th>
+          <th>Amount</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @plan.entries.each do |entry| %>
+          <tr class="<%= 'import-row-error' if entry.error.present? %>">
+            <td class="import-line"><%= import_line_number(entry) %></td>
+            <td>
+              <div class="name"><%= import_account_label(entry) %></div>
+              <% if entry.account_changes.any? %>
+                <div class="meta"><%= import_account_changes(entry) %></div>
+              <% end %>
+              <% if entry.error.present? %>
+                <div class="import-row-error-msg"><%= entry.error %></div>
+              <% end %>
+            </td>
+            <td><%= import_action_badge(entry.account_action) || tag.span("Error", class: "badge badge-down") %></td>
+            <td><%= import_month_cell(entry) %></td>
+            <td class="import-amount"><%= import_amount_cell(entry) %></td>
+            <td>
+              <% if entry.error.present? && entry.value_action == :none && entry.account_action.nil? %>
+                <%= tag.span("Error", class: "badge badge-down") %>
+              <% else %>
+                <%= import_action_badge(entry.value_action) || "—" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="form-actions import-preview-actions">
+    <% if @plan.success? %>
+      <%= form_with url: confirm_import_path, method: :post do %>
+        <%= hidden_field_tag :csv, @csv_body %>
+        <%= submit_tag "Apply import", class: "btn btn-primary" %>
+        <%= link_to "Cancel", import_path, class: "btn btn-ghost" %>
+      <% end %>
+    <% else %>
+      <%= link_to "Fix the file and try again", import_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,117 @@
+/* CSV import */
+
+.import-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+.import-form { width: 100%; }
+.file-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--cream-2);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.file-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.file-field input[type="file"] {
+  font: inherit;
+  color: var(--ink);
+  max-width: 100%;
+}
+.import-help-copy {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin: 0 0 12px;
+}
+.import-help-copy code,
+.import-help-list code {
+  font-size: 0.88em;
+  background: var(--cream-2);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.import-help-list {
+  margin: 0 0 16px;
+  padding-left: 1.2rem;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.import-help-list li { margin-bottom: 6px; }
+.import-help-list strong { color: var(--ink); }
+.footnote a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.footnote a:hover { text-decoration: underline; }
+
+.import-errors {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  font-size: 0.92rem;
+}
+.import-errors ul {
+  margin: 6px 0 0;
+  padding-left: 1.2em;
+}
+.import-table-wrap {
+  overflow-x: auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+}
+.import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.import-table th,
+.import-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.import-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.import-table tr:last-child td { border-bottom: 0; }
+.import-line {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.import-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.import-row-error-msg {
+  color: var(--red);
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+.badge-update {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.import-preview-actions form {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}

@@ -27,7 +27,7 @@ cards, friendly copy, one clear thing per screen.
 | **No JS build step** | Frontend uses **Hotwire (Turbo + Stimulus) over import maps** only. Newest browsers only. |
 | **Testable per-PR from a phone** | Every PR deploys to **Render** (see `render.yaml`) with **seeded test data**, so it can be poked from a phone as we build. |
 | **Playful & simple** | hey.com-style warm UI; the dashboard shows one clear number per product. |
-| **Future** | An **MCP server** (after the dashboard is done) so an LLM can answer questions and drive insights over the data. |
+| **Future** | An **MCP server** (later, optional) so an LLM can answer questions over the data. Prefer real data in the app first. |
 
 ### Tech stack
 - **Rails 8.1**, Ruby 3.3
@@ -479,11 +479,46 @@ bin/importmap audit
 - **Tests:** suggestions exclude kinds the user already holds.
 - **Files:** a constant/PORO, a view partial, tests.
 
-### Milestone 12 — MCP server (read-only)
-**Goal:** let an LLM answer questions over the real numbers.
-- Expose read-only tools (list accounts, get values, net worth, allocation)
-  via an MCP server. Design after the dashboard is complete; spec this milestone
-  in more detail when we reach it.
+### Milestone 12 — CSV portfolio importer & exporter
+**Goal:** mass-import an existing household portfolio from a spreadsheet, and
+export the current accounts + values in the same format so a preview or Pi
+can be restored without typing every account/month by hand.
+
+**Branch:** `milestone-12-csv-import` → stacks on `milestone-5-net-worth-reminder`
+(parallel to the later feature stack; ships as soon as M5 is in).
+
+- **CSV format** (header row, UTF-8):
+  `account_id,value_id,name,institution,kind,recorded_on,amount,...`
+  - `account_id` / `value_id` (from export) uniquely identify rows and **update**
+    those records. Unknown ids fall back to name + institution, then create.
+  - Import is idempotent: re-importing an export does not duplicate accounts/values.
+  - Match accounts on `account_id` then `(name, institution)`; create when missing (`kind` required).
+  - Upsert `AccountValue` on `value_id` then `(account, recorded_on)`.
+  - Normalize `recorded_on` to the 1st of the month.
+  - Allow `$` / commas in amounts; liabilities negative.
+  - Credit cards: account-only rows (no balances).
+  - Invalid rows fail the whole import with a clear line-numbered message.
+- **UI:** `/import` — export current portfolio, file upload, format help,
+  downloadable example CSV (`lib/portfolio_formats/example.csv`, not seeds).
+  Import + export links from the dashboard footnote.
+  Upload is two-phase: `POST /import` previews a table of create / update / keep
+  (no writes); `POST /import/confirm` applies the same CSV. Confirm is hidden
+  when the plan has errors.
+- **Transfer layer (format-agnostic):** `PortfolioRow`, `PortfolioImport`
+  (persist, transaction + result summary), `PortfolioImportPreview` (dry-run
+  plan; shares `PortfolioImport::Matching`), `PortfolioExport` (accounts → rows).
+- **Format codec:** `PortfolioFormats::Csv` encodes/decodes rows. The
+  controller holds `CODEC = PortfolioFormats::Csv` — swap that (or pick by
+  filename) to add JSON later without touching import/export.
+- **Tests:** happy path (create accounts + values), upsert on re-import, reject
+  bad kind/date/amount, reject credit-card balances, missing columns, template
+  download, export includes fixture rows and round-trips through import,
+  domain import from typed rows (no CSV), preview classifies create/update/keep
+  without writing, upload renders preview, confirm persists.
+- **Files:** transfer POROs (import persist, import preview, export), CSV codec,
+  controller, view, routes, CSS, dashboard link, tests.
+- **Out of scope:** brokerage statement parsers, FX conversion, MCP server
+  (deferred indefinitely).
 
 ---
 

@@ -1,0 +1,65 @@
+<% content_for :title, "Import and export CSV" %>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>CSV import &amp; export <span class="wave">📥</span></h1>
+    <p>Bring an existing portfolio in, or download what you have — same columns either way.</p>
+  </header>
+
+  <section class="card import-card">
+    <div class="body">
+      <div class="name">Download current portfolio</div>
+      <div class="meta">One row per monthly value (credit cards get a single blank-value row). Re-importable on a fresh Render preview.</div>
+    </div>
+    <div class="value-form-actions">
+      <%= link_to "Export CSV", export_import_path, class: "btn btn-primary" %>
+    </div>
+  </section>
+
+  <section class="card import-card">
+    <div class="body">
+      <div class="name">Upload a file</div>
+      <div class="meta">We’ll show what would be created or updated before anything is saved. Rows with <code>account_id</code> / <code>value_id</code> (from an export) update those records; otherwise we match on name + institution or create.</div>
+    </div>
+
+    <%= form_with url: import_path, method: :post, multipart: true, class: "import-form" do %>
+      <label class="file-field">
+        <span class="file-label">Choose CSV</span>
+        <%= file_field_tag :file, accept: ".csv,text/csv", required: true %>
+      </label>
+
+      <div class="value-form-actions">
+        <%= submit_tag "Review import", class: "btn btn-primary" %>
+        <%= link_to "Cancel", root_path, class: "btn btn-ghost" %>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="import-help">
+    <h2 class="section-title">Format</h2>
+    <p class="import-help-copy">
+      Columns: <code>account_id</code>, <code>value_id</code>, <code>name</code>,
+      <code>institution</code>, <code>kind</code>, <code>recorded_on</code>,
+      <code>amount</code>.
+      Liabilities also need <code>interest_rate</code>, <code>term_months</code>,
+      and <code>original_principal</code>.
+    </p>
+    <ul class="import-help-list">
+      <li><strong>account_id</strong> — optional; from an export, updates that account (can rename)</li>
+      <li><strong>value_id</strong> — optional; from an export, updates that month's snapshot</li>
+      <li><strong>name</strong> — required (e.g. Managed TFSA)</li>
+      <li><strong>institution</strong> — optional (e.g. Wealthsimple)</li>
+      <li><strong>kind</strong> — required for new accounts:
+        <%= Account::KINDS.join(", ") %></li>
+      <li><strong>recorded_on</strong> — date of the snapshot (normalized to the 1st of that month)</li>
+      <li><strong>amount</strong> — dollars; liabilities should be negative</li>
+    </ul>
+    <p class="import-help-copy">
+      Leave <code>recorded_on</code> and <code>amount</code> blank to create an account without a balance
+      (credit cards always work this way).
+    </p>
+    <p>
+      <%= link_to "Download example CSV →", template_import_path, class: "section-action" %>
+    </p>
+  </section>
+</div>

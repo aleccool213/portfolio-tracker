@@ -1,0 +1,6 @@
+account_id,value_id,name,institution,kind,recorded_on,amount,interest_rate,term_months,original_principal
+,,Example TFSA,Questrade,tfsa,2026-01-01,15000.00,,,
+,,Example TFSA,Questrade,tfsa,2026-02-01,15375.00,,,
+,,Example RRSP,Questrade,rrsp,2026-02-01,28000.00,,,
+,,Example mortgage,Scotiabank,liability,2026-02-01,-210000.00,5.14,60,280000
+,,Example Visa,Amex,credit_card,,,,,
