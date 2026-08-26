@@ -22,7 +22,7 @@ class ImportsController < ApplicationController
       return
     end
 
-    @plan = PortfolioImport.new(decoded.rows).preview
+    @plan = PortfolioImportPreview.new(decoded.rows).call
     @csv_body = csv_body
     render :preview
   end

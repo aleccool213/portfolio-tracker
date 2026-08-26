@@ -505,7 +505,8 @@ can be restored without typing every account/month by hand.
   (no writes); `POST /import/confirm` applies the same CSV. Confirm is hidden
   when the plan has errors.
 - **Transfer layer (format-agnostic):** `PortfolioRow`, `PortfolioImport`
-  (transaction + result summary), `PortfolioExport` (accounts → rows).
+  (persist, transaction + result summary), `PortfolioImportPreview` (dry-run
+  plan; shares `PortfolioImport::Matching`), `PortfolioExport` (accounts → rows).
 - **Format codec:** `PortfolioFormats::Csv` encodes/decodes rows. The
   controller holds `CODEC = PortfolioFormats::Csv` — swap that (or pick by
   filename) to add JSON later without touching import/export.
@@ -514,8 +515,8 @@ can be restored without typing every account/month by hand.
   download, export includes fixture rows and round-trips through import,
   domain import from typed rows (no CSV), preview classifies create/update/keep
   without writing, upload renders preview, confirm persists.
-- **Files:** transfer POROs, CSV codec, controller, view, routes, CSS,
-  dashboard link, tests.
+- **Files:** transfer POROs (import persist, import preview, export), CSV codec,
+  controller, view, routes, CSS, dashboard link, tests.
 - **Out of scope:** brokerage statement parsers, FX conversion, MCP server
   (deferred indefinitely).
 

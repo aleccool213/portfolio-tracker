@@ -18,7 +18,7 @@ class PortfolioImportTest < ActiveSupport::TestCase
     ]
 
     assert_no_difference [ "Account.count", "AccountValue.count" ] do
-      plan = PortfolioImport.new(rows).preview
+      plan = PortfolioImportPreview.new(rows).call
       assert plan.success?, plan.errors.inspect
       assert_equal :create, plan.entries.first.account_action
       assert_equal :create, plan.entries.first.value_action
@@ -35,7 +35,7 @@ class PortfolioImportTest < ActiveSupport::TestCase
                        recorded_on: Date.new(2026, 2, 1), amount: 20, origin: "Line 3")
     ]
 
-    plan = PortfolioImport.new(rows).preview
+    plan = PortfolioImportPreview.new(rows).call
 
     assert plan.success?, plan.errors.inspect
     assert_equal :create, plan.entries[0].account_action
@@ -53,7 +53,7 @@ class PortfolioImportTest < ActiveSupport::TestCase
                        recorded_on: Date.new(2026, 7, 1), amount: 50_000)
     ]
 
-    plan = PortfolioImport.new(rows).preview
+    plan = PortfolioImportPreview.new(rows).call
 
     assert plan.success?, plan.errors.inspect
     assert_equal :keep, plan.entries.first.account_action
@@ -65,12 +65,12 @@ class PortfolioImportTest < ActiveSupport::TestCase
     tfsa = accounts(:managed_tfsa)
     value = account_values(:managed_tfsa_june)
 
-    plan = PortfolioImport.new([
+    plan = PortfolioImportPreview.new([
       PortfolioRow.new(
         account_id: tfsa.id, value_id: value.id, name: "Renamed TFSA", institution: tfsa.institution,
         kind: tfsa.kind, recorded_on: value.recorded_on, amount: 99_999
       )
-    ]).preview
+    ]).call
 
     assert plan.success?, plan.errors.inspect
     entry = plan.entries.first
@@ -86,7 +86,7 @@ class PortfolioImportTest < ActiveSupport::TestCase
     tfsa = accounts(:managed_tfsa)
     rows = PortfolioExport.rows([ tfsa ])
 
-    plan = PortfolioImport.new(rows).preview
+    plan = PortfolioImportPreview.new(rows).call
 
     assert plan.success?, plan.errors.inspect
     assert plan.entries.any?
@@ -102,7 +102,7 @@ class PortfolioImportTest < ActiveSupport::TestCase
     ]
 
     assert_no_difference [ "Account.count", "AccountValue.count" ] do
-      plan = PortfolioImport.new(rows).preview
+      plan = PortfolioImportPreview.new(rows).call
       assert_not plan.success?
       assert_match(/credit cards do not track balances/, plan.errors.first)
       assert_match(/credit cards do not track balances/, plan.entries.first.error)
@@ -115,7 +115,7 @@ class PortfolioImportTest < ActiveSupport::TestCase
                        recorded_on: Date.new(2026, 1, 1), amount: 1, origin: "Line 2")
     ]
 
-    plan = PortfolioImport.new(rows).preview
+    plan = PortfolioImportPreview.new(rows).call
 
     assert_not plan.success?
     assert_match(/kind must be one of/, plan.errors.first)
