@@ -31,7 +31,7 @@ class AccountSuggestion
   ].freeze
 
   def self.for(accounts)
-    held = Array(accounts).map(&:kind).to_set
+    held = Products.wrap_all(accounts).select(&:asset?).map { |product| product.record.kind }.to_set
     CATALOG.reject { |s| held.include?(s.kind) }
   end
 end

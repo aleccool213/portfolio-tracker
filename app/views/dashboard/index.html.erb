@@ -40,34 +40,29 @@
     <%= link_to "Add account", new_account_path, class: "section-action" %>
   </div>
 
-  <% if @value_accounts.any? %>
+  <% if @value_products.any? %>
     <div class="cards">
-      <% @value_accounts.each do |account| %>
+      <% @value_products.each do |product| %>
         <article class="card">
-          <div class="dot"><%= kind_emoji(account.kind) %></div>
+          <div class="dot"><%= kind_emoji(product.record.kind) %></div>
           <div class="body">
-            <div class="name"><%= account.name %></div>
-            <div class="meta"><%= account.institution %></div>
-            <% if account.mortgage? && account.interest_rate.present? %>
-              <div class="meta liability-meta">
-                <%= number_to_percentage(account.interest_rate, precision: 2) %>
-                <% if account.term_months.present? %>
-                  · <%= account.term_months / 12 %> yr term
-                <% end %>
-              </div>
+            <div class="name"><%= product.name %></div>
+            <div class="meta"><%= product.institution %></div>
+            <% if (rate_line = product.rate_line) %>
+              <div class="meta liability-meta"><%= rate_line %></div>
             <% end %>
             <div class="card-actions">
-              <%= link_to "Edit", edit_account_path(account) %>
-              <%= button_to "Delete", account_path(account), method: :delete,
-                    form: { data: { turbo_confirm: "Remove #{account.name}? Its value history goes too." } },
+              <%= link_to "Edit", edit_account_path(product) %>
+              <%= button_to "Delete", account_path(product), method: :delete,
+                    form: { data: { turbo_confirm: "Remove #{product.name}? Its value history goes too." } },
                     class: "link-button" %>
             </div>
           </div>
           <div class="figures">
-            <div class="amount"><%= formatted_amount(account.current_amount) %></div>
-            <%= monthly_change_badge(account) %>
-            <%= render "sparkline", account: account %>
-            <div class="tag"><%= account.kind_label %></div>
+            <div class="amount"><%= formatted_amount(product.current_amount) %></div>
+            <%= monthly_change_badge(product) %>
+            <%= render "sparkline", account: product.record %>
+            <div class="tag"><%= product.kind_label %></div>
           </div>
         </article>
       <% end %>
@@ -86,12 +81,12 @@
     <div class="cards">
       <% @cards.each do |card| %>
         <article class="card card-perk">
-          <div class="dot"><%= kind_emoji(card.kind) %></div>
+          <div class="dot"><%= kind_emoji(card.record.kind) %></div>
           <div class="body">
             <div class="name"><%= card.name %></div>
             <div class="meta"><%= card.institution %></div>
-            <% if card.perks.present? %>
-              <p class="perks"><%= simple_format(card.perks, {}, wrapper_tag: "span") %></p>
+            <% if card.record.perks.present? %>
+              <p class="perks"><%= simple_format(card.record.perks, {}, wrapper_tag: "span") %></p>
             <% end %>
             <div class="card-actions">
               <%= link_to "Edit", edit_account_path(card) %>
@@ -102,14 +97,14 @@
           </div>
           <div class="figures">
             <div class="amount">
-              <% if card.annual_fee.present? %>
-                <%= number_to_currency(card.annual_fee, unit: "$", precision: 0) %><span class="fee-label">/yr</span>
+              <% if card.record.annual_fee.present? %>
+                <%= number_to_currency(card.record.annual_fee, unit: "$", precision: 0) %><span class="fee-label">/yr</span>
               <% else %>
                 —
               <% end %>
             </div>
-            <% if card.renewal_on.present? %>
-              <div class="tag">Renews <%= card.renewal_on.strftime("%b %Y") %></div>
+            <% if card.record.renewal_on.present? %>
+              <div class="tag">Renews <%= card.record.renewal_on.strftime("%b %Y") %></div>
             <% end %>
           </div>
         </article>

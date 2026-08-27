@@ -26,8 +26,8 @@ module DashboardHelper
 
   # A small ▲/▼ badge for month-over-month change, or nil when none.
   # Example: <span class="badge badge-up">▲ +3.6%</span>
-  def monthly_change_badge(account)
-    change_badge(MonthlyChange.for(account))
+  def monthly_change_badge(product)
+    change_badge(product.monthly_change)
   end
 
   # Renders a MonthlyChange::Result (account or portfolio), or nothing.
