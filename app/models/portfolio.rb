@@ -2,13 +2,13 @@
 # and whether it's time for the monthly value check-in.
 class Portfolio
   def initialize(accounts)
-    @accounts = Array(accounts)
+    @products = Products.wrap_all(accounts)
   end
 
-  # Sum of signed current amounts across trackable accounts.
+  # Sum of signed current amounts across trackable products.
   # Credit cards are excluded; missing amounts count as zero.
   def net_worth
-    trackable_accounts.sum { |account| signed_amount(account, account.current_amount) }
+    trackable_products.sum(&:net_worth_contribution)
   end
 
   # Month-over-month change of portfolio totals for the current vs prior calendar
@@ -26,38 +26,23 @@ class Portfolio
     MonthlyChange.from_amounts(current_total, prior_total)
   end
 
-  # True when any trackable account is missing a snapshot for this month.
+  # True when any trackable product is missing a snapshot for this month.
   def needs_check_in?
     month = Date.current.beginning_of_month
-    trackable_accounts.any? { |account| amount_on(account, month).nil? }
+    trackable_products.any? { |product| product.amount_on(month).nil? }
   end
 
   private
 
-  def trackable_accounts
-    @trackable_accounts ||= @accounts.reject { |account| account.kind == "credit_card" }
-  end
-
-  def signed_amount(account, amount)
-    return 0 if amount.nil?
-
-    account.kind == "liability" ? -amount.abs : amount
-  end
-
-  def amount_on(account, date)
-    values = account.account_values
-    if values.loaded?
-      values.find { |value| value.recorded_on == date }&.amount
-    else
-      values.find_by(recorded_on: date)&.amount
-    end
+  def trackable_products
+    @trackable_products ||= @products.select(&:trackable?)
   end
 
   def any_value_on?(date)
-    trackable_accounts.any? { |account| !amount_on(account, date).nil? }
+    trackable_products.any? { |product| !product.amount_on(date).nil? }
   end
 
   def total_as_of(date)
-    trackable_accounts.sum { |account| signed_amount(account, amount_on(account, date)) }
+    trackable_products.sum { |product| product.signed_amount_on(date) }
   end
 end

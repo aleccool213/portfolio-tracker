@@ -10,12 +10,12 @@ class Account < ApplicationRecord
 
   # Liability-only details (mortgage rate, term, original principal).
   validates :interest_rate, :term_months, :original_principal,
-            presence: true, if: :mortgage?
-  validates :interest_rate, numericality: { greater_than: 0 }, if: -> { mortgage? && interest_rate.present? }
+            presence: true, if: :liability_kind?
+  validates :interest_rate, numericality: { greater_than: 0 }, if: -> { liability_kind? && interest_rate.present? }
   validates :term_months, numericality: { only_integer: true, greater_than: 0 },
-            if: -> { mortgage? && term_months.present? }
+            if: -> { liability_kind? && term_months.present? }
   validates :original_principal, numericality: { greater_than: 0 },
-            if: -> { mortgage? && original_principal.present? }
+            if: -> { liability_kind? && original_principal.present? }
 
   # The most recent monthly snapshot, or nil if none recorded yet.
   def latest_value
@@ -29,14 +29,6 @@ class Account < ApplicationRecord
   # This account's current worth (from its latest snapshot), or nil.
   def current_amount
     latest_value&.amount
-  end
-
-  def mortgage?
-    kind == "liability"
-  end
-
-  def credit_card?
-    kind == "credit_card"
   end
 
   # Human-friendly label for a kind, e.g. "non_registered" => "Non-registered".
@@ -54,5 +46,11 @@ class Account < ApplicationRecord
     when "tfsa", "rrsp", "resp", "fhsa" then kind.upcase
     else kind.to_s.tr("_", " ").capitalize
     end
+  end
+
+  private
+
+  def liability_kind?
+    kind == "liability"
   end
 end

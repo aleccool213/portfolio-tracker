@@ -45,11 +45,6 @@ class AccountTest < ActiveSupport::TestCase
     assert_nil accounts(:rrsp).current_amount
   end
 
-  test "mortgage? is true for liability accounts" do
-    assert accounts(:mortgage).mortgage?
-    assert_not accounts(:managed_tfsa).mortgage?
-  end
-
   test "liability accounts require rate term and principal" do
     account = Account.new(name: "Mortgage", kind: "liability")
     assert_not account.valid?
@@ -72,10 +67,5 @@ class AccountTest < ActiveSupport::TestCase
   test "non-liability accounts ignore liability fields" do
     account = Account.new(name: "TFSA", kind: "tfsa")
     assert account.valid?
-  end
-
-  test "credit_card? is true for card accounts" do
-    assert accounts(:aeroplan).credit_card?
-    assert_not accounts(:managed_tfsa).credit_card?
   end
 end
