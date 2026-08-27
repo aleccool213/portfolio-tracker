@@ -1,4 +1,4 @@
-<%= form_with model: account, class: "account-form" do |f| %>
+<%= form_with model: account, class: "account-form", data: { controller: "account-fields" } do |f| %>
   <% if account.errors.any? %>
     <div class="form-errors">
       <strong>Couldn’t save this account:</strong>
@@ -22,42 +22,15 @@
 
   <div class="form-field">
     <%= f.label :kind %>
-    <%= f.select :kind, Account.kind_options, { prompt: "Choose a type…" }, required: true %>
+    <%= f.select :kind, Account.kind_options, { prompt: "Choose a type…" },
+          required: true,
+          data: { account_fields_target: "kind", action: "change->account-fields#toggle" } %>
   </div>
 
-  <p class="form-hint">Liability details (used for mortgages — leave blank for other types):</p>
-
-  <div class="form-field">
-    <%= f.label :interest_rate, "Interest rate (%)" %>
-    <%= f.number_field :interest_rate, step: 0.001, min: 0, placeholder: "e.g. 4.89" %>
-  </div>
-
-  <div class="form-field">
-    <%= f.label :term_months, "Term (months)" %>
-    <%= f.number_field :term_months, step: 1, min: 1, placeholder: "e.g. 60" %>
-  </div>
-
-  <div class="form-field">
-    <%= f.label :original_principal %>
-    <%= f.number_field :original_principal, step: 0.01, min: 0, placeholder: "e.g. 450000" %>
-  </div>
-
-  <p class="form-hint">Credit-card details (no balances — just why you keep the card):</p>
-
-  <div class="form-field">
-    <%= f.label :annual_fee %>
-    <%= f.number_field :annual_fee, step: 0.01, min: 0, placeholder: "e.g. 139" %>
-  </div>
-
-  <div class="form-field">
-    <%= f.label :perks %>
-    <%= f.text_area :perks, rows: 3, placeholder: "e.g. Free first checked bag, lounge access…" %>
-  </div>
-
-  <div class="form-field">
-    <%= f.label :renewal_on, "Renewal date" %>
-    <%= f.date_field :renewal_on %>
-  </div>
+  <%# One group per product type; the Stimulus controller shows the matching one. %>
+  <%= render "asset_fields", f: f %>
+  <%= render "mortgage_fields", f: f %>
+  <%= render "credit_card_fields", f: f %>
 
   <div class="form-actions">
     <%= f.submit class: "btn btn-primary" %>

@@ -2,8 +2,8 @@ require "test_helper"
 
 class PortfolioTest < ActiveSupport::TestCase
   setup do
-    @accounts = Account.order(:kind, :name).to_a
-    @portfolio = Portfolio.new(@accounts)
+    @products = Products.wrap_all(Account.order(:kind, :name))
+    @portfolio = Portfolio.new(@products)
   end
 
   test "net_worth sums assets and signed liabilities" do
@@ -15,7 +15,7 @@ class PortfolioTest < ActiveSupport::TestCase
     card = accounts(:aeroplan)
     AccountValue.create!(account: card, recorded_on: Date.new(2026, 6, 1), amount: 9_999)
 
-    portfolio = Portfolio.new(Account.order(:kind, :name).to_a)
+    portfolio = Portfolio.new(Products.wrap_all(Account.order(:kind, :name)))
     assert_equal BigDecimal("-274500"), portfolio.net_worth
   end
 
@@ -25,7 +25,7 @@ class PortfolioTest < ActiveSupport::TestCase
     AccountValue.create!(account: mortgage, recorded_on: Date.new(2026, 6, 1), amount: 200_000)
     mortgage.account_values.reload
 
-    portfolio = Portfolio.new([ accounts(:managed_tfsa), mortgage ])
+    portfolio = Portfolio.new(Products.wrap_all([ accounts(:managed_tfsa), mortgage ]))
     # 43_500 + (-200_000)
     assert_equal BigDecimal("-156500"), portfolio.net_worth
   end
@@ -44,7 +44,7 @@ class PortfolioTest < ActiveSupport::TestCase
       month => { managed_tfsa: 50_000, mortgage: -290_000 }
     )
 
-    change = Portfolio.new(Account.order(:kind, :name).to_a).monthly_change
+    change = Portfolio.new(Products.wrap_all(Account.order(:kind, :name))).monthly_change
 
     assert_not_nil change
     assert_equal :up, change.direction
@@ -61,7 +61,7 @@ class PortfolioTest < ActiveSupport::TestCase
       month => { managed_tfsa: 40_000, mortgage: -200_000 }
     )
 
-    change = Portfolio.new(Account.order(:kind, :name).to_a).monthly_change
+    change = Portfolio.new(Products.wrap_all(Account.order(:kind, :name))).monthly_change
 
     assert_not_nil change
     assert_equal :down, change.direction
@@ -81,7 +81,7 @@ class PortfolioTest < ActiveSupport::TestCase
       end
     end
 
-    assert_not Portfolio.new(Account.order(:kind, :name).to_a).needs_check_in?
+    assert_not Portfolio.new(Products.wrap_all(Account.order(:kind, :name))).needs_check_in?
   end
 
   test "needs_check_in? ignores credit cards" do
@@ -93,7 +93,7 @@ class PortfolioTest < ActiveSupport::TestCase
     end
     Account.create!(name: "Orphan Card", institution: "TD", kind: "credit_card")
 
-    assert_not Portfolio.new(Account.order(:kind, :name).to_a).needs_check_in?
+    assert_not Portfolio.new(Products.wrap_all(Account.order(:kind, :name))).needs_check_in?
   end
 
   private

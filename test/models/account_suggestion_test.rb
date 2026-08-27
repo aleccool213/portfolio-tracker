@@ -2,7 +2,7 @@ require "test_helper"
 
 class AccountSuggestionTest < ActiveSupport::TestCase
   test "excludes kinds the household already holds" do
-    suggestions = AccountSuggestion.for(Account.all)
+    suggestions = AccountSuggestion.for(Products.wrap_all(Account.all))
     kinds = suggestions.map(&:kind)
 
     assert_not_includes kinds, "tfsa"
