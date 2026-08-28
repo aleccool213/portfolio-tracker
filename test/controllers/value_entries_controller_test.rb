@@ -57,4 +57,12 @@ class ValueEntriesControllerTest < ActionDispatch::IntegrationTest
       post value_entry_url, params: { values: { card.id => "500" } }
     end
   end
+
+  test "create records liabilities as entered, letting the product sign them" do
+    mortgage = accounts(:mortgage)
+    post value_entry_url, params: { values: { mortgage.id => "-317000" } }
+
+    assert_equal(-317_000, mortgage.account_values.find_by(recorded_on: @month).amount)
+    assert_equal BigDecimal("-317000"), Products.wrap(mortgage.reload).net_worth_contribution
+  end
 end

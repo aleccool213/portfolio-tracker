@@ -1,6 +1,12 @@
 # Post-merge architecture: domain products
 
-Wait until **PR #22 (CSV import) is on `master`**, then do **one architecture PR**. Do not sneak this into #22, and do not split tables yet.
+**Status: landed**, ahead of PR #22 rather than after it. Everything below is
+as-built except the CSV import, which wasn't in the tree yet — when #22
+rebases, `PortfolioCsvImport` should wrap rows with `Products.wrap` and use
+`product.trackable?` / `product.record_amount(...)` instead of its own `kind`
+checks, exactly as the table further down describes.
+
+_Original framing:_ wait until **PR #22 (CSV import) is on `master`**, then do **one architecture PR**. Do not sneak this into #22, and do not split tables yet.
 
 M8–M11 are already merged. After CSV lands, every real caller of `Account.kind` exists: dashboard, value entry, CRUD form, allocation, suggestions, and import. That is the moment a wrapper hierarchy pays off — one PR can make all of them kind-blind, and later mortgage-vs-invest / MCP work has a class to live in.
 

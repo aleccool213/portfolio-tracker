@@ -1,0 +1,21 @@
+<fieldset class="field-group"
+          data-account-fields-target="group"
+          data-kinds="<%= Products.kinds_for(Products::CreditCard).join(" ") %>">
+  <legend>Card details</legend>
+  <p class="form-hint">No balances — just why you keep the card.</p>
+
+  <div class="form-field">
+    <%= f.label :annual_fee %>
+    <%= f.number_field :annual_fee, step: 0.01, min: 0, placeholder: "e.g. 139" %>
+  </div>
+
+  <div class="form-field">
+    <%= f.label :perks %>
+    <%= f.text_area :perks, rows: 3, placeholder: "e.g. Free first checked bag, lounge access…" %>
+  </div>
+
+  <div class="form-field">
+    <%= f.label :renewal_on, "Renewal date" %>
+    <%= f.date_field :renewal_on %>
+  </div>
+</fieldset>

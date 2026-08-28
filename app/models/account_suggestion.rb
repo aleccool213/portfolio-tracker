@@ -1,5 +1,8 @@
 # Lightweight Canadian registered-account hints for products you don't hold yet.
 # Hard-coded 2026 room notes — clearly dated, not tax advice.
+#
+# Takes products (see Products.wrap_all): only asset sleeves count as "held",
+# so a mortgage or a credit card never suppresses a suggestion.
 class AccountSuggestion
   Suggestion = Data.define(:kind, :label, :who_for, :room_note)
 
@@ -30,8 +33,8 @@ class AccountSuggestion
     )
   ].freeze
 
-  def self.for(accounts)
-    held = Array(accounts).map(&:kind).to_set
+  def self.for(products)
+    held = Array(products).select(&:asset?).map(&:kind).to_set
     CATALOG.reject { |s| held.include?(s.kind) }
   end
 end

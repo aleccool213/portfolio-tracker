@@ -8,8 +8,8 @@
 
   <%= form_with url: value_entry_path, method: :post, class: "value-form" do %>
     <div class="cards">
-      <% @accounts.each do |account| %>
-        <%= render "row", account: account, current: @current_values[account.id] %>
+      <% @products.each do |product| %>
+        <%= render "row", product: product, current: @current_values[product.id] %>
       <% end %>
     </div>
 

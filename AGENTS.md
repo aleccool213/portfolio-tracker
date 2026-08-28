@@ -150,6 +150,29 @@ enough. The preview URL looks like
 `db:prepare` (migrate + seed); a seed validation error shows up as
 `update_failed` in deploy logs, not a build failure.
 
+### 11. System tests: this container's chromedriver is stale
+`bin/rails test:system` fails here with
+`session not created: Chrome instance exited` /
+`This version of ChromeDriver only supports Chrome version 147`. Two container
+quirks, neither of them a code problem (GitHub runners are fine):
+
+- `/opt/node22/bin/chromedriver` (147) shadows the matched driver Selenium
+  Manager would fetch. Drop it from `PATH` for the run.
+- chromedriver then can't find a Chrome binary. Selenium Manager caches one
+  under `~/.cache/selenium/chrome/linux64/<version>/chrome`; symlink it to
+  `/usr/local/bin/google-chrome` (the `/opt/pw-browsers/chromium` Playwright
+  uses is a different, older build — don't point at that one).
+
+```bash
+ln -sf /root/.cache/selenium/chrome/linux64/*/chrome /usr/local/bin/google-chrome
+PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/opt/node22/bin$' | paste -sd:) \
+  bin/rails test:system
+```
+
+`test/application_system_test_case.rb` passes `--no-sandbox` /
+`--disable-dev-shm-usage` so the suite runs as root in a container; both are
+harmless on CI.
+
 ## Taking a screenshot (visual verification)
 
 Handy since this app is mostly used from a phone. Start the server, then:

@@ -1,27 +1,28 @@
 class ValueEntriesController < ApplicationController
-  # One row per account we track a value for. Credit cards are intentionally
-  # value-less (we track perks, not balances), so they're excluded here.
+  # One row per product we track a value for. Credit cards are intentionally
+  # value-less (we track perks, not balances), so they exclude themselves.
   def show
     @month = Date.current.beginning_of_month
-    @accounts = trackable_accounts
-    @current_values = AccountValue.where(account: @accounts, recorded_on: @month)
+    @products = trackable_products
+    @current_values = AccountValue.where(account_id: @products.map(&:id), recorded_on: @month)
                                   .index_by(&:account_id)
   end
 
-  # Upsert one AccountValue per submitted account for the current month.
+  # Upsert one AccountValue per submitted product for the current month.
   # Blank fields are skipped, so you can enter accounts a few at a time without
   # wiping the ones you left alone.
   def create
     month = Date.current.beginning_of_month
-    allowed_ids = trackable_accounts.pluck(:id).to_set
+    products_by_id = trackable_products.index_by(&:id)
 
     AccountValue.transaction do
       submitted_values.each do |account_id, amount|
         next if amount.blank?
-        next unless allowed_ids.include?(account_id.to_i)
 
-        value = AccountValue.find_or_initialize_by(account_id: account_id, recorded_on: month)
-        value.update!(amount: amount)
+        product = products_by_id[account_id.to_i]
+        next if product.nil?
+
+        product.record_amount(month, amount)
       end
     end
 
@@ -30,8 +31,8 @@ class ValueEntriesController < ApplicationController
 
   private
 
-  def trackable_accounts
-    Account.where.not(kind: "credit_card").order(:kind, :name)
+  def trackable_products
+    @trackable_products ||= Products.wrap_all(Account.order(:kind, :name)).select(&:trackable?)
   end
 
   def submitted_values

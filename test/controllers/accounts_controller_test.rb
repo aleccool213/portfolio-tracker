@@ -9,6 +9,15 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name=?]", "account[kind]"
   end
 
+  test "new renders one field group per product type" do
+    get new_account_url
+    assert_select "fieldset.field-group", 3
+    assert_select "fieldset.field-group[data-kinds=?]", "liability"
+    assert_select "fieldset.field-group[data-kinds=?]", "credit_card"
+    assert_select "fieldset.field-group[data-kinds*=?]", "tfsa"
+    assert_select "select[data-account-fields-target=?]", "kind"
+  end
+
   test "create with valid params adds an account" do
     assert_difference -> { Account.count }, 1 do
       post accounts_url, params: {

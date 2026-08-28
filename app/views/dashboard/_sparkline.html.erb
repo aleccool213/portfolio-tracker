@@ -1,5 +1,4 @@
-<% amounts = account.account_values.sort_by(&:recorded_on).map(&:amount) %>
-<% points = sparkline_points(amounts) %>
+<% points = sparkline_points(product.chronological_amounts) %>
 <% if points.any? %>
   <svg class="sparkline" viewBox="0 0 80 28" width="80" height="28" aria-hidden="true">
     <polyline

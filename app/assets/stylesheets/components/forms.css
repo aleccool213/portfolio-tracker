@@ -54,3 +54,17 @@
   font-size: 0.88rem;
   color: var(--ink-soft);
 }
+.field-group {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px 4px;
+  margin: 0 0 18px;
+}
+.field-group legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  padding: 0 6px;
+}
+.field-group[hidden] { display: none; }
+.field-group .form-hint { margin-top: 0; }
